@@ -73,9 +73,12 @@ Nil shows no icon at all."
   :type '(choice (const :tag "None" nil) function)
   :set #'modern-tab-set-and-forget)
 
-(defcustom modern-tab-line-close-glyphs '("✕ " "x ")
+(defcustom modern-tab-line-close-glyphs '("✕ " "× " "x ")
   "Glyphs of the close button, best first.
-The first one the frame can draw wins, so keep a plain character last."
+The first one the frame can draw *in the font of the row* wins, so
+keep a plain character last.  `✕' has no glyph in most programming
+fonts and a fallback font drew it in another weight and another
+width; `×' is in almost all of them."
   :type '(repeat string)
   :set #'modern-tab-set-and-forget)
 

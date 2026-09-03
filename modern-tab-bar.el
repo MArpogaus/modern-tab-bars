@@ -104,9 +104,12 @@ button was a hex box there rather than the plain text."
   :type '(repeat string)
   :set #'modern-tab-set-and-forget)
 
-(defcustom modern-tab-bar-close-glyphs '(" ✕ " " x ")
-  "Glyphs of the button that closes a tab, best first.
-The first one the frame can draw wins, so keep a plain string last."
+(defcustom modern-tab-bar-close-glyphs '(" ✕ " " × " " x ")
+  "Glyphs of the close button, best first.
+The first one the frame can draw *in the font of the row* wins, so
+keep a plain character last.  `✕' has no glyph in most programming
+fonts and a fallback font drew it in another weight and another
+width; `×' is in almost all of them."
   :type '(repeat string)
   :set #'modern-tab-set-and-forget)
 

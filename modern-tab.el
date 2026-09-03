@@ -116,6 +116,24 @@ planes 15 and 16."
       (<= #xF0000 char #xFFFFD)
       (<= #x100000 char #x10FFFD)))
 
+(defun modern-tab--own-font-p (string)
+  "Whether the font drawing STRING is the one its own face asks for.
+A character its face's font does not carry is drawn by a fallback the
+fontset finds, in another family: `✕' has no glyph in most programming
+fonts, so the close button came out in whatever font the frame keeps
+for symbols — another weight, another width, another baseline than the
+row it sits in.  Such a glyph counts as one this frame cannot draw, so
+the plain candidate after it wins.
+
+Both families have to be known for the answer to be no: a font whose
+family cannot be read, or a face that names none, is left as it was."
+  (when-let* ((font (font-at 0 nil string))
+              (drawn (font-get font :family))
+              (face (or (get-text-property 0 'face string) 'default))
+              (wanted (face-attribute face :family nil 'default))
+              ((stringp wanted)))
+    (string-equal-ignore-case (format "%s" drawn) wanted)))
+
 (defun modern-tab--drawable-p (string)
   "Return non-nil where this frame draws the first character of STRING.
 The question is asked of STRING, so the face STRING carries is part of
@@ -125,7 +143,7 @@ answers for a font that draws nothing here.
 
 `font-at' answers with the font that will really draw the character:
 the one the face names, the one a fallback finds, or nil where none
-will.
+will.  A fallback is refused; see `modern-tab--own-font-p'.
 
 A terminal has no font to ask, and `char-displayable-p' answers for the
 coding system instead: a UTF-8 terminal says yes to a glyph it will
@@ -133,7 +151,8 @@ draw as a box.  There is nothing better to ask it."
   (and (stringp string)
        (not (string-empty-p string))
        (if (display-graphic-p)
-           (font-at 0 nil string)
+           (and (font-at 0 nil string)
+                (modern-tab--own-font-p string))
          ;; A terminal has no font to ask, and `char-displayable-p'
          ;; answers for the coding system: a UTF-8 terminal says yes to
          ;; every character it can encode, box or not.  So a glyph from
