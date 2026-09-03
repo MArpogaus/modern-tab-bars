@@ -293,7 +293,10 @@ because this mode was turned off.")
         tab-line-separator ""
         tab-line-new-button-show nil
         tab-line-close-button-show 'selected)
-  (global-tab-line-mode 1)
+  ;; Only where the row is off: `global-tab-line-mode' re-runs its body
+  ;; when it is already on, and a reader who turns this mode on from
+  ;; `tab-line-mode-hook' would recurse through the two for ever.
+  (unless global-tab-line-mode (global-tab-line-mode 1))
   (modern-tab-line-update-frame))
 
 (defun modern-tab-line--teardown ()

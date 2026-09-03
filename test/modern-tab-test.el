@@ -527,6 +527,20 @@ itself and give those back instead of the reader's."
     ;; teardown must not switch off what the package never touched
     (should-not (modern-tab-give-back 'modern-tab-test-mode))))
 
+(ert-deftest modern-tab-line-test-the-mode-survives-its-own-hook ()
+  "A reader may turn this mode on from `tab-line-mode-hook'.
+The setup then runs inside `global-tab-line-mode', which is already on,
+and re-enabling it there recursed through the hook for ever."
+  (let ((max-lisp-eval-depth 200)
+        (hook (lambda () (modern-tab-line-mode 1))))
+    (add-hook 'tab-line-mode-hook hook)
+    (unwind-protect
+        (with-temp-buffer
+          (modern-tab-line-mode 1)
+          (should global-tab-line-mode))
+      (remove-hook 'tab-line-mode-hook hook)
+      (modern-tab-line-mode -1))))
+
 (ert-deftest modern-tab-line-test-the-tabs-are-the-ones-the-row-shows ()
   "`tab-line-tabs-function' says what the row shows, and a reader may set it."
   (let ((tab-line-tabs-function (lambda () '(a b))))
