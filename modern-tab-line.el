@@ -112,32 +112,48 @@ built again on every command."
        (lambda ()
          (modern-tab-glyph (nerd-icons-icon-for-file name) ""))))))
 
+(defun modern-tab-line--buffer (tab)
+  "Return the buffer TAB stands for."
+  (if (bufferp tab) tab (cdr (assq 'buffer tab))))
+
 (defun modern-tab-line-tab-name (buffer &optional _buffers)
-  "Return the name shown on the tab of BUFFER.
-This is what `tab-line-tab-name-function' is set to."
-  (let* ((icon (and modern-tab-line-icon-function
-                    (funcall modern-tab-line-icon-function buffer)))
-         (selected (eq buffer (window-buffer))))
+  "Return the name shown on the tab of BUFFER, with its icon.
+This is what `tab-line-tab-name-function' is set to.  The indicator is
+not here: see `modern-tab-line-tab-format'."
+  (let ((icon (and modern-tab-line-icon-function
+                   (funcall modern-tab-line-icon-function buffer))))
+    (concat " "
+            (if (and icon (not (string-empty-p icon))) (concat icon " ") "")
+            (buffer-name buffer)
+            " ")))
+
+(defun modern-tab-line-tab-format (tab tabs)
+  "Return TAB, one of TABS, as the row draws it, indicator first.
+This is what `tab-line-tab-name-format-function' is set to.
+
+The indicator is not in `modern-tab-line-tab-name', because
+`tab-line-tab-name-format-default' propertizes the whole name it
+formats with the face of the row and `propertize' overwrites a face: a
+terminal indicator, which carries its colour in a face of its own, came
+out in the colour of the row.  The image form of a graphic frame
+survived, which is why this only showed in a terminal."
+  (let ((selected (eq (modern-tab-line--buffer tab) (window-buffer))))
     (concat (modern-tab-indicator
              modern-tab-line-indicator-height
              (if selected modern-tab-line-active-indicator-width
                modern-tab-line-inactive-indicator-width)
              (if selected modern-tab-line-active-indicator-color
                modern-tab-line-inactive-indicator-color))
-            " "
-            (if (and icon (not (string-empty-p icon))) (concat icon " ") "")
-            (buffer-name buffer)
-            " ")))
+            (tab-line-tab-name-format-default tab tabs))))
 
 ;;;; Closing a tab
 
-(defun modern-tab-line--buffer (tab)
-  "Return the buffer TAB stands for."
-  (if (bufferp tab) tab (cdr (assq 'buffer tab))))
-
 (defun modern-tab-line--several-p ()
-  "Return non-nil where the selected window has more than one tab."
-  (> (length (tab-line-tabs-window-buffers)) 1))
+  "Return non-nil where the selected window has more than one tab.
+The tabs are the ones the row shows, which `tab-line-tabs-function'
+says: a reader may have set it to another of the stock functions, or to
+a list of their own."
+  (> (length (funcall tab-line-tabs-function)) 1))
 
 (defun modern-tab-line-close-tab (tab)
   "Bury or kill the buffer of TAB, and delete the window with its last tab.
@@ -166,14 +182,19 @@ where none does."
 
 ;;;; Hiding a row that says nothing
 
-(defun modern-tab-line-update-window ()
-  "Show the tab line in the selected window only where it has tabs.
-A window whose parameter says something else was set by somebody else,
-and it is left as it is: this hides rows, it does not take the row over."
+(defun modern-tab-line-update-window (&optional window)
+  "Show the tab line in WINDOW only where it has tabs.
+WINDOW is the selected window by default, which is what the hook this
+sits on asks about.  A window whose parameter says something else was
+set by somebody else, and it is left as it is: this hides rows, it does
+not take the row over."
   (when (and modern-tab-line-auto-hide
-             (memq (window-parameter nil 'tab-line-format) '(nil none)))
-    (set-window-parameter nil 'tab-line-format
-                          (if (modern-tab-line--several-p) nil 'none))))
+             (memq (window-parameter window 'tab-line-format) '(nil none)))
+    (set-window-parameter
+     window 'tab-line-format
+     (if (with-selected-window (or window (selected-window))
+           (modern-tab-line--several-p))
+         nil 'none))))
 
 (defun modern-tab-line-update-frame (&rest _)
   "Ask every window of every frame whether to show its tab line.
@@ -181,19 +202,16 @@ Every frame, because a frame that is not the selected one keeps its
 rows until something changes its windows, and a row of one tab says
 nothing there either."
   (when modern-tab-line-auto-hide
-    (dolist (frame (frame-list))
-      (dolist (window (window-list frame))
-        (with-selected-window window
-          (modern-tab-line-update-window))))))
+    (walk-windows #'modern-tab-line-update-window 'no-mini t)))
 
 (defun modern-tab-line--show-everywhere ()
   "Take the hiding off every window that this package hid.
 A window whose parameter says something else was set by somebody else,
 and it is left alone."
-  (dolist (frame (frame-list))
-    (dolist (window (window-list frame))
-      (when (eq (window-parameter window 'tab-line-format) 'none)
-        (set-window-parameter window 'tab-line-format nil)))))
+  (walk-windows (lambda (window)
+                  (when (eq (window-parameter window 'tab-line-format) 'none)
+                    (set-window-parameter window 'tab-line-format nil)))
+                'no-mini t))
 
 ;;;; The mode
 
@@ -206,15 +224,20 @@ because this mode was turned off.")
   "Give the tab line the modern look."
   (add-hook 'buffer-list-update-hook #'modern-tab-line-update-window)
   (add-hook 'window-state-change-hook #'modern-tab-line-update-frame)
-  (modern-tab-borrow 'modern-tab-line-mode
-                     'tab-line-tab-name-function
-                     'tab-line-close-tab-function
-                     'tab-line-separator
-                     'tab-line-new-button-show
-                     'tab-line-close-button-show
-                     'tab-line-close-button)
-  (setq modern-tab-line--had-the-row global-tab-line-mode
-        tab-line-tab-name-function #'modern-tab-line-tab-name
+  ;; The row this mode found is remembered where this call is the one
+  ;; that borrowed: a second enable would otherwise remember the row
+  ;; the first one turned on.
+  (when (modern-tab-borrow 'modern-tab-line-mode
+                           'tab-line-tab-name-function
+                           'tab-line-tab-name-format-function
+                           'tab-line-close-tab-function
+                           'tab-line-separator
+                           'tab-line-new-button-show
+                           'tab-line-close-button-show
+                           'tab-line-close-button)
+    (setq modern-tab-line--had-the-row global-tab-line-mode))
+  (setq tab-line-tab-name-function #'modern-tab-line-tab-name
+        tab-line-tab-name-format-function #'modern-tab-line-tab-format
         tab-line-close-tab-function #'modern-tab-line-close-tab
         tab-line-separator ""
         tab-line-new-button-show nil

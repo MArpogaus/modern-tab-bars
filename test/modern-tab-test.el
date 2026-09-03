@@ -50,16 +50,21 @@
 (ert-deftest modern-tab-test-a-tab-reads-the-option-of-its-state ()
   "Each state has its own width and its own colour.
 The selected tab of the tab line takes a bar; the others take none,
-which is what a width of zero asks for."
+which is what a width of zero asks for.  The bar comes from
+`modern-tab-line-tab-format\\=', which puts it in front of the name the
+row formats: the face of a terminal bar would not survive the
+`propertize\\=' that formatting does."
   (skip-unless (not (display-graphic-p)))
   (let ((modern-tab-line-active-indicator-width 3)
         (modern-tab-line-inactive-indicator-width 0)
         (modern-tab-line-active-indicator-color "red")
-        (modern-tab-line-icon-function nil))
+        (modern-tab-line-icon-function nil)
+        (tab-line-tab-name-function #'modern-tab-line-tab-name))
     (with-temp-buffer
       (set-window-buffer nil (current-buffer))
-      (let ((selected (modern-tab-line-tab-name (current-buffer)))
-            (other (modern-tab-line-tab-name (get-buffer-create "*other*"))))
+      (let* ((tabs (list (current-buffer) (get-buffer-create "*other*")))
+             (selected (modern-tab-line-tab-format (car tabs) tabs))
+             (other (modern-tab-line-tab-format (cadr tabs) tabs)))
         (should (equal (get-text-property 0 'face selected)
                        '(:foreground "red" :background "red")))
         (should (string-prefix-p "|" (substring-no-properties selected)))
@@ -338,6 +343,34 @@ button at all."
     (modern-tab-line-update-window)
     (should (eq (window-parameter nil 'tab-line-format) 'none))
     (set-window-parameter nil 'tab-line-format nil)))
+
+(defvar modern-tab-test--borrowed-var 'reader
+  "A variable for the borrow tests to keep and give back.")
+
+(ert-deftest modern-tab-test-a-second-enable-borrows-nothing ()
+  "The values a mode borrows are the ones it found the first time.
+`define-minor-mode' runs its body on every call and a nil argument
+means enable, so a mode enabled twice would record the values it set
+itself and give those back instead of the reader's."
+  (let ((modern-tab--borrowed nil)
+        (modern-tab-test--borrowed-var 'reader))
+    (should (modern-tab-borrow 'modern-tab-test-mode
+                               'modern-tab-test--borrowed-var))
+    (setq modern-tab-test--borrowed-var 'mine)
+    (should-not (modern-tab-borrow 'modern-tab-test-mode
+                                   'modern-tab-test--borrowed-var))
+    (should (modern-tab-give-back 'modern-tab-test-mode))
+    (should (eq modern-tab-test--borrowed-var 'reader))
+    ;; and a mode that borrowed nothing gives nothing back: its
+    ;; teardown must not switch off what the package never touched
+    (should-not (modern-tab-give-back 'modern-tab-test-mode))))
+
+(ert-deftest modern-tab-line-test-the-tabs-are-the-ones-the-row-shows ()
+  "`tab-line-tabs-function' says what the row shows, and a reader may set it."
+  (let ((tab-line-tabs-function (lambda () '(a b))))
+    (should (modern-tab-line--several-p)))
+  (let ((tab-line-tabs-function (lambda () '(a))))
+    (should-not (modern-tab-line--several-p))))
 
 (provide 'modern-tab-test)
 ;;; modern-tab-test.el ends here
