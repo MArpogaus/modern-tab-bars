@@ -123,6 +123,7 @@ images draws one column of a vertical line instead.
 | =modern-tab-bar-new-glyphs=        | the new button, best glyph first               |
 | =modern-tab-bar-close-glyphs=      | the close button, best glyph first             |
 | =modern-tab-bar-current-glyphs=    | the mark on the selected tab, best first       |
+| =modern-tab-bar-menu-glyphs=       | the menu button, best glyph first              |
 | =modern-tab-bar-format=            | what the bar shows, as =tab-bar-format= takes it |
 
 An icon is a string shown as it is, or a plist naming a nerd-icons

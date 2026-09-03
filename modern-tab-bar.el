@@ -113,6 +113,12 @@ width; `×' is in almost all of them."
   :type '(repeat string)
   :set #'modern-tab-set-and-forget)
 
+(defcustom modern-tab-bar-menu-glyphs '("󰍜 " "≡ " " Menu ")
+  "Glyphs of the menu button, best first.
+The first one the frame can draw wins, so keep a plain string last."
+  :type '(repeat string)
+  :set #'modern-tab-set-and-forget)
+
 (defcustom modern-tab-bar-current-glyphs '("󰅂 " "› " "  ")
   "Glyphs that mark the selected tab, best first.
 The first one the frame can draw wins, so keep a plain character last.
@@ -195,7 +201,20 @@ The question is asked per redisplay and not once at enable, so a
 daemon that serves a graphic frame and a terminal frame answers it for
 each of them."
   (when (display-graphic-p)
-    (tab-bar-format-menu-bar)))
+    ;; The button is built here rather than taken from
+    ;; `tab-bar-format-menu-bar', whose string carries
+    ;; `tab-bar-tab-inactive': a face meant for a tab, and in a bar
+    ;; this package draws it is the colour of neither the bar nor a
+    ;; tab — measured with doom-one, the word "Menu" could not be
+    ;; read at all.  No face of our own either: the string then wears
+    ;; the face of the row it sits in, which is what the new button
+    ;; does.
+    `((menu-bar menu-item
+                ,(modern-tab-icon-for
+                  'menu-button
+                  (lambda () (apply #'modern-tab-glyph
+                                    modern-tab-bar-menu-glyphs)))
+                tab-bar-menu-bar :help "Menu bar"))))
 
 (defun modern-tab-bar--group-icon (name)
   "Return the icon for the tab group NAME.
