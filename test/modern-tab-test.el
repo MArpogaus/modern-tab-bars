@@ -384,9 +384,90 @@ per redisplay, so the reader's own button is left where it stood."
                            tab-line-new-button-show
                            tab-line-close-button-show tab-line-close-button)
                      was))
-      (should-not (memq #'modern-tab-line-update-window
-                        buffer-list-update-hook))
       (should-not global-tab-line-mode))))
+
+(ert-deftest modern-tab-line-test-the-mode-watches-the-windows ()
+  "The mode asks about a row when a window changes, not when a buffer does.
+`buffer-list-update-hook' was here before: it runs on every
+`get-buffer-create', `set-buffer' and `kill-buffer' — about twice per
+buffer operation — and walked the buffer lists of a window each time.
+What changes a window's row of tabs is a window showing another buffer,
+the windows themselves changing, and a buffer being killed."
+  (modern-tab-line-mode 1)
+  (should (memq #'modern-tab-line-update-frame window-buffer-change-functions))
+  (should (memq #'modern-tab-line-update-frame
+                window-configuration-change-hook))
+  (should (memq #'modern-tab-line--buffer-killed kill-buffer-hook))
+  (should-not (memq #'modern-tab-line-update-window buffer-list-update-hook))
+  (modern-tab-line-mode -1)
+  (should-not (memq #'modern-tab-line-update-frame
+                    window-buffer-change-functions))
+  (should-not (memq #'modern-tab-line-update-frame
+                    window-configuration-change-hook))
+  (should-not (memq #'modern-tab-line--buffer-killed kill-buffer-hook)))
+
+(ert-deftest modern-tab-line-test-another-buffer-in-a-window-shows-the-row ()
+  "A window that shows a second buffer gets its row back."
+  (let ((modern-tab-line-auto-hide t)
+        (one (generate-new-buffer "modern-tab-line-test-one"))
+        (two (generate-new-buffer "modern-tab-line-test-two")))
+    (set-window-parameter nil 'tab-line-format nil)
+    (set-window-buffer nil one)
+    (set-window-prev-buffers nil nil)
+    (set-window-next-buffers nil nil)
+    (modern-tab-line-update-frame)
+    (should (eq (window-parameter nil 'tab-line-format) 'none))
+    ;; the window shows another buffer, so the one before it is a tab
+    (set-window-buffer nil two)
+    (modern-tab-line-update-frame)
+    (should-not (window-parameter nil 'tab-line-format))
+    (kill-buffer one)
+    (kill-buffer two)
+    (set-window-parameter nil 'tab-line-format nil)))
+
+(ert-deftest modern-tab-line-test-killing-a-tab-hides-a-row-of-one ()
+  "A killed buffer leaves the buffer lists of a window with no window change.
+`kill-buffer-hook' is the only word of it, and it runs before the
+buffer goes: the tab of the buffer that is going is discounted."
+  (let ((modern-tab-line-auto-hide t)
+        (one (generate-new-buffer "modern-tab-line-test-one"))
+        (two (generate-new-buffer "modern-tab-line-test-two")))
+    (set-window-parameter nil 'tab-line-format nil)
+    (set-window-buffer nil one)
+    (set-window-prev-buffers nil nil)
+    (set-window-next-buffers nil nil)
+    (set-window-buffer nil two)
+    (should (memq one (mapcar #'car (window-prev-buffers))))
+    ;; the hook runs while the buffer is still there, so a count that
+    ;; keeps it would leave the row of a single tab showing
+    (let ((modern-tab-line--dying one))
+      (should-not (modern-tab-line--several-p)))
+    (should (modern-tab-line--several-p))
+    (modern-tab-line--buffer-killed)
+    (should-not (window-parameter nil 'tab-line-format))
+    (with-current-buffer one (modern-tab-line--buffer-killed))
+    (should (eq (window-parameter nil 'tab-line-format) 'none))
+    (kill-buffer one)
+    (kill-buffer two)
+    (set-window-parameter nil 'tab-line-format nil)))
+
+(ert-deftest modern-tab-line-test-a-new-window-is-asked-about-too ()
+  "A window that splitting made is asked about its own row."
+  (skip-unless (> (window-body-height) 6))
+  (let ((modern-tab-line-auto-hide t)
+        (buffer (generate-new-buffer "modern-tab-line-test-split")))
+    (set-window-parameter nil 'tab-line-format nil)
+    (set-window-buffer nil buffer)
+    (set-window-prev-buffers nil nil)
+    (set-window-next-buffers nil nil)
+    (let ((other (split-window)))
+      (modern-tab-line-update-frame)
+      (should (eq (window-parameter other 'tab-line-format) 'none))
+      (delete-window other))
+    (modern-tab-line-update-frame)
+    (should (eq (window-parameter nil 'tab-line-format) 'none))
+    (kill-buffer buffer)
+    (set-window-parameter nil 'tab-line-format nil)))
 
 (ert-deftest modern-tab-line-test-a-row-the-reader-had-stays ()
   "A `global-tab-line-mode' that was on before the mode stays on after it."

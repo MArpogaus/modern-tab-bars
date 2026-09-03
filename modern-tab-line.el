@@ -175,12 +175,23 @@ that the row of every frame gets the glyph that frame can draw.  See
 
 ;;;; Closing a tab
 
+(defvar modern-tab-line--dying nil
+  "A buffer on its way out, whose tab no longer counts.
+`kill-buffer-hook' runs while the buffer is still live and still in the
+buffer lists of every window, so it says which one is going.")
+
 (defun modern-tab-line--several-p ()
   "Return non-nil where the selected window has more than one tab.
 The tabs are the ones the row shows, which `tab-line-tabs-function'
 says: a reader may have set it to another of the stock functions, or to
-a list of their own."
-  (> (length (funcall tab-line-tabs-function)) 1))
+a list of their own.  The buffer of `modern-tab-line--dying' does not
+count."
+  (length> (seq-remove (lambda (tab)
+                         (and modern-tab-line--dying
+                              (eq (modern-tab-line--buffer tab)
+                                  modern-tab-line--dying)))
+                       (funcall tab-line-tabs-function))
+           1))
 
 (defun modern-tab-line-close-tab (tab)
   "Bury or kill the buffer of TAB, and delete the window with its last tab.
@@ -211,17 +222,16 @@ where none does."
 
 (defun modern-tab-line-update-window (&optional window)
   "Show the tab line in WINDOW only where it has tabs.
-WINDOW is the selected window by default, which is what the hook this
-sits on asks about.  A window whose parameter says something else was
-set by somebody else, and it is left as it is: this hides rows, it does
-not take the row over."
-  (when (and modern-tab-line-auto-hide
-             (memq (window-parameter window 'tab-line-format) '(nil none)))
-    (set-window-parameter
-     window 'tab-line-format
-     (if (with-selected-window (or window (selected-window))
-           (modern-tab-line--several-p))
-         nil 'none))))
+WINDOW is the selected window by default.  A window whose parameter
+says something else was set by somebody else, and it is left as it is:
+this hides rows, it does not take the row over."
+  (let ((window (or window (selected-window))))
+    (when (and modern-tab-line-auto-hide
+               (memq (window-parameter window 'tab-line-format) '(nil none)))
+      (set-window-parameter
+       window 'tab-line-format
+       (if (with-selected-window window (modern-tab-line--several-p))
+           nil 'none)))))
 
 (defun modern-tab-line-update-frame (&rest _)
   "Ask every window of every frame whether to show its tab line.
@@ -230,6 +240,15 @@ rows until something changes its windows, and a row of one tab says
 nothing there either."
   (when modern-tab-line-auto-hide
     (walk-windows #'modern-tab-line-update-window 'no-mini t)))
+
+(defun modern-tab-line--buffer-killed ()
+  "Ask every window about its tab line, less the buffer that is going.
+On `kill-buffer-hook', which is the only word of the one case no window
+change function reports: a buffer that no window shows leaves the
+buffer lists of the windows that remember it, and no window changes.
+The hook runs before the buffer goes, so its own tab is discounted."
+  (let ((modern-tab-line--dying (current-buffer)))
+    (modern-tab-line-update-frame)))
 
 (defun modern-tab-line--show-everywhere ()
   "Take the hiding off every window that this package hid.
@@ -249,8 +268,14 @@ because this mode was turned off.")
 
 (defun modern-tab-line--setup ()
   "Give the tab line the modern look."
-  (add-hook 'buffer-list-update-hook #'modern-tab-line-update-window)
-  (add-hook 'window-state-change-hook #'modern-tab-line-update-frame)
+  ;; The three things that change what a window's row of tabs holds.
+  ;; `buffer-list-update-hook' was here before: it runs on every
+  ;; `get-buffer-create', `set-buffer' and `kill-buffer' — about twice
+  ;; per buffer operation — and each run walked the buffer lists of a
+  ;; window for a count that had not changed.
+  (add-hook 'window-buffer-change-functions #'modern-tab-line-update-frame)
+  (add-hook 'window-configuration-change-hook #'modern-tab-line-update-frame)
+  (add-hook 'kill-buffer-hook #'modern-tab-line--buffer-killed)
   ;; The row this mode found is remembered where this call is the one
   ;; that borrowed: a second enable would otherwise remember the row
   ;; the first one turned on.
@@ -273,12 +298,14 @@ because this mode was turned off.")
 
 (defun modern-tab-line--teardown ()
   "Give the tab line back what it had before the mode."
-  (remove-hook 'buffer-list-update-hook #'modern-tab-line-update-window)
-  (remove-hook 'window-state-change-hook #'modern-tab-line-update-frame)
-  (modern-tab-line--show-everywhere)
-  ;; Nothing borrowed is a mode that was never on, and a stock
-  ;; `global-tab-line-mode' is not this package's to switch off.
+  (remove-hook 'window-buffer-change-functions #'modern-tab-line-update-frame)
+  (remove-hook 'window-configuration-change-hook
+               #'modern-tab-line-update-frame)
+  (remove-hook 'kill-buffer-hook #'modern-tab-line--buffer-killed)
+  ;; Nothing borrowed is a mode that was never on: it hid no row, and a
+  ;; stock `global-tab-line-mode' is not this package's to switch off.
   (when (modern-tab-give-back 'modern-tab-line-mode)
+    (modern-tab-line--show-everywhere)
     (unless modern-tab-line--had-the-row
       (global-tab-line-mode -1))))
 

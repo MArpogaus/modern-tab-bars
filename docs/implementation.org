@@ -83,10 +83,29 @@ its modes with no frame at all.
 
 A row of tabs with a single tab on it says nothing and costs a line of
 every window, so a window showing one buffer gets =tab-line-format= of
-=none= as a window parameter.  Two hooks keep that current:
-=buffer-list-update-hook= for the selected window and
-=window-state-change-hook= for every window of the frame.  Turning the
-mode off takes the parameter off every window of every frame.
+=none= as a window parameter.  The tabs of a window come from the two
+buffer lists of that window, so three hooks keep the parameter current:
+
+- =window-buffer-change-functions=, for a window that shows another
+  buffer;
+- =window-configuration-change-hook=, for the windows themselves
+  changing;
+- =kill-buffer-hook=, for a buffer that leaves the buffer lists of the
+  windows that remember it.
+
+The last one is the only word of a killed buffer that no window shows:
+nothing about a window changes, so no window change function runs.  It
+runs before the buffer goes, which is why the count discounts the tab
+of the buffer that is going.
+
+=buffer-list-update-hook= was here before.  It runs on every
+=get-buffer-create=, =set-buffer= and =kill-buffer= — about twice per
+buffer operation — and each run walked the buffer lists of a window for
+a count that had not changed.
+
+Turning the mode off takes the parameter off every window of every
+frame, and only where the mode had borrowed: a mode that was never on
+hid no row.
 
 * The tab bar in a terminal
 
