@@ -28,12 +28,25 @@ other.
 
 =modern-tab-glyph= takes candidates and answers with the first the
 frame can really draw, the last one being the answer where it can draw
-none.  The question is asked with =font-at=, of the string and the face
-it carries: a nerd-icons glyph names a font family of its own, and
-asking whether the buffer's default font has the character answers for
-a font that draws nothing here.  In a buffer where =mixed-pitch-mode=
-remaps the default face, that mistake reads every nerd glyph as
-missing.
+none.  On a graphic frame the question goes to =font-at=, of the string
+and the face it carries: a nerd-icons glyph names a font family of its
+own, and asking whether the buffer's default font has the character
+answers for a font that draws nothing here.  In a buffer where
+=mixed-pitch-mode= remaps the default face, that mistake reads every
+nerd glyph as missing.  A glyph =font-at= answers for with a font of
+another family is refused as well: that font is a fallback the fontset
+found, in another weight and another width than the row it sits in.
+
+Every character of a candidate is asked about, not the first one alone.
+The glyphs of the tab bar are padded with the spaces that hold them
+away from the text beside them, so a question about the first character
+was a question about a space, which every display draws.
+
+A terminal has no font to ask.  =char-displayable-p= answers for the
+coding system there, and a UTF-8 terminal says yes to every character
+it can encode, box or not.  So a character of a Unicode private use
+area is refused on a terminal: that is where a nerd font keeps its
+glyphs, and no terminal font can be assumed to carry them.
 
 Finding a nerd icon walks the table of its style — 6880 entries for the
 material design one — so an answer is kept per key and per display.  A

@@ -42,10 +42,12 @@ differently — the tab bar keys its icons on the name of a group, the
 tab line asks a function for the icon of a buffer.
 
 Icons come from [[https://github.com/rainstormstudio/nerd-icons.el][nerd-icons]] where it is installed and the frame has the
-font.  A graphic frame without the font falls back to a plain
-character.  A terminal is only asked whether it can encode the glyph,
-not whether it has the font, so a UTF-8 terminal without a nerd font
-shows a box: name plain strings in the icon options there.
+font.  Each frame gets the glyph that frame can draw, so one daemon
+serves a graphic frame and a terminal frame at once.  A graphic frame
+without the font falls back to a plain character.  A terminal has no
+font to ask, so a nerd glyph falls back there too.  A symbol a UTF-8
+terminal can encode but its font has no glyph for still shows a box:
+name plain strings in the icon options there.
 
 ** Getting Started
 

@@ -78,6 +78,31 @@ row formats: the face of a terminal bar would not survive the
   ;; A plain character a terminal can draw wins over the ones after it.
   (should (equal (modern-tab-glyph "a" "b") "a")))
 
+(ert-deftest modern-tab-test-a-private-use-glyph-is-refused-by-a-terminal ()
+  "A terminal can encode a nerd glyph and has no font that draws it.
+`char-displayable-p' answers for the coding system, so a UTF-8 terminal
+says yes to a character it shows as a box."
+  (skip-unless (not (display-graphic-p)))
+  (should (modern-tab--private-use-p ?\uE000))
+  (should (modern-tab--private-use-p ?\uF8FF))
+  (should (modern-tab--private-use-p ?\U000F035C))
+  (should-not (modern-tab--private-use-p ?\u2261))
+  (should-not (modern-tab--drawable-p "\uEA60"))
+  (should (equal (modern-tab-glyph "\uEA60" "+") "+")))
+
+(ert-deftest modern-tab-test-a-glyph-is-judged-by-every-character ()
+  "A candidate is drawable only where the frame draws all of it.
+The glyphs of the tab bar are padded with the spaces that hold them
+away from the text beside them.  Asking about the first character asked
+about a space, which every display draws: measured on a daemon with a
+terminal frame, the new button came out as the nerd glyph of its first
+candidate — a box there."
+  (skip-unless (not (display-graphic-p)))
+  (should-not (modern-tab--drawable-p " \uEA60 "))
+  (should (equal (modern-tab-glyph " \uEA60 " " + ") " + "))
+  ;; and the padding alone is still drawable
+  (should (modern-tab--drawable-p "   ")))
+
 (ert-deftest modern-tab-test-an-icon-spec-is-a-string-or-a-plist ()
   "A string stands for itself, nil is nothing, a plist names a nerd icon."
   (should (equal (modern-tab-icon "*") "*"))

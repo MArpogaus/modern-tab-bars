@@ -49,9 +49,10 @@
 ;; Icons come from nerd-icons where it is installed and the frame has
 ;; the font.  A graphic frame without the font falls back to a plain
 ;; character: `font-at' answers for the font that will really draw.  A
-;; terminal is only asked whether it can encode the character, so a
-;; UTF-8 terminal without a nerd font shows a box rather than a
-;; fallback — name plain strings in the icon options there.
+;; terminal has no font to ask, so it is asked whether it can encode
+;; the character and a glyph of a private use area is refused there.  A
+;; symbol a UTF-8 terminal can encode but its font has no glyph for
+;; still shows a box — name plain strings in the icon options there.
 
 ;;; Code:
 
@@ -116,8 +117,8 @@ planes 15 and 16."
       (<= #xF0000 char #xFFFFD)
       (<= #x100000 char #x10FFFD)))
 
-(defun modern-tab--own-font-p (string)
-  "Whether the font drawing STRING is the one the row's own text uses.
+(defun modern-tab--own-font-p (string index)
+  "Whether the font drawing STRING at INDEX is the row's own text font.
 A character the face's font does not carry is drawn by a fallback the
 fontset finds, in another family: `✕' has no glyph in most programming
 fonts, so the close button came out in whatever font the frame keeps
@@ -125,27 +126,27 @@ for symbols — another weight, another width, another baseline than the
 row it sits in.  Such a glyph counts as one this frame cannot draw, and
 the plain candidate after it wins.
 
-The same question is asked of a plain `x' carrying STRING's own face,
-in the same buffer and on the same frame, and the two answers are
-compared.  Asking the face for its `:family' instead was wrong in every
-buffer that remaps a face — a theme, `variable-pitch', a package that
-remaps `default' — because the family a face names and the family it is
-drawn in are then two different things: measured, the close button was
-right in a file buffer and wrong in `*scratch*'.
+The same question is asked of a plain `x' carrying the face STRING
+carries at INDEX, in the same buffer and on the same frame, and the two
+answers are compared.  Asking the face for its `:family' instead was
+wrong in every buffer that remaps a face — a theme, `variable-pitch', a
+package that remaps `default' — because the family a face names and the
+family it is drawn in are then two different things: measured, the
+close button was right in a file buffer and wrong in `*scratch*'.
 
 Both families have to be known for the answer to be no: a font whose
 family cannot be read leaves the glyph as it was."
-  (when-let* ((font (font-at 0 nil string))
+  (when-let* ((font (font-at index nil string))
               (plain (font-at 0 nil (propertize
                                      "x" 'face
-                                     (or (get-text-property 0 'face string)
+                                     (or (get-text-property index 'face string)
                                          'default))))
               (drawn (font-get font :family))
               (wanted (font-get plain :family)))
     (string-equal-ignore-case (format "%s" drawn) (format "%s" wanted))))
 
-(defun modern-tab--drawable-p (string)
-  "Return non-nil where this frame draws the first character of STRING.
+(defun modern-tab--char-drawable-p (string index)
+  "Return non-nil where this frame draws STRING's character at INDEX.
 The question is asked of STRING, so the face STRING carries is part of
 it.  That is the point: a nerd-icons glyph names a font family of its
 own, and asking whether the buffer's default font has the character
@@ -153,32 +154,38 @@ answers for a font that draws nothing here.
 
 `font-at' answers with the font that will really draw the character:
 the one the face names, the one a fallback finds, or nil where none
-will.  A fallback is refused; see `modern-tab--own-font-p'.
+will.  A fallback is refused; see `modern-tab--own-font-p'."
+  (if (display-graphic-p)
+      (and (font-at index nil string)
+           (modern-tab--own-font-p string index))
+    ;; A terminal has no font to ask, and `char-displayable-p' answers
+    ;; for the coding system: a UTF-8 terminal says yes to every
+    ;; character it can encode, box or not.  So a glyph from a private
+    ;; use area is refused there — that is where a nerd font keeps its
+    ;; own, and no terminal font can be assumed to carry them.
+    (let ((char (aref string index)))
+      (and (char-displayable-p char)
+           (not (modern-tab--private-use-p char))))))
 
-A terminal has no font to ask, and `char-displayable-p' answers for the
-coding system instead: a UTF-8 terminal says yes to a glyph it will
-draw as a box.  There is nothing better to ask it."
+(defun modern-tab--drawable-p (string)
+  "Return non-nil where this frame draws every character of STRING.
+Every character, and not the first one alone: a candidate is padded
+with the spaces that hold its glyph away from the text beside it, and
+asking about the first character asked about a space.  Measured on a
+daemon with a terminal frame, the new button of the tab bar came out as
+the nerd glyph of its first candidate — a box on that frame — and on a
+graphic frame the close button came out as `✕' in a fallback font,
+which is what the question is here to refuse."
   (and (stringp string)
        (not (string-empty-p string))
-       (if (display-graphic-p)
-           (and (font-at 0 nil string)
-                (modern-tab--own-font-p string))
-         ;; A terminal has no font to ask, and `char-displayable-p'
-         ;; answers for the coding system: a UTF-8 terminal says yes to
-         ;; every character it can encode, box or not.  So a glyph from
-         ;; a private use area is refused there — that is where a nerd
-         ;; font keeps its own, and no terminal font can be assumed to
-         ;; carry them.
-         (let ((c (aref string 0)))
-           (and (char-displayable-p c)
-                (not (modern-tab--private-use-p c)))))))
+       (seq-every-p (lambda (index) (modern-tab--char-drawable-p string index))
+                    (number-sequence 0 (1- (length string))))))
 
 (defun modern-tab-glyph (&rest candidates)
-  "Return the first of CANDIDATES this frame can draw.
+  "Return the first of CANDIDATES this frame can draw whole.
 The last one is the answer where it can draw none of them, so keep a
-plain character there.  nerd-icons answers with a glyph whether or not
-the frame has the font, and such a glyph without the font is a hex
-box."
+plain string there.  nerd-icons answers with a glyph whether or not the
+frame has the font, and such a glyph without the font is a hex box."
   (or (seq-find #'modern-tab--drawable-p (butlast candidates))
       (car (last candidates))))
 
