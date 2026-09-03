@@ -175,20 +175,19 @@ function only where it has none yet:
 
 ** Development
 
-| Target        | What it does                             |
-|---------------+------------------------------------------|
-| =compile=     | byte-compile, warnings are errors        |
-| =checkdoc=    | documentation style, any output fails    |
-| =lint=        | package-lint, the rules MELPA applies    |
-| =relint=      | the regular expressions                  |
-| =test=        | ERT suite                                |
-| =complexity=  | what each function costs a reader        |
-| =clean=       | remove build output and the tool sandbox |
+| Target      | What it does                             |
+|-------------+------------------------------------------|
+| =compile=   | byte-compile, warnings are errors        |
+| =checkdoc=  | documentation style, any output fails    |
+| =lint=      | package-lint, the rules MELPA applies    |
+| =relint=    | the regular expressions                  |
+| =test=      | ERT suite                                |
+| =format=    | the indentation Emacs gives Lisp         |
+| =clean=     | remove build output and the tool sandbox |
 
 Plain =make= runs the checks in that order, exactly as the CI does.
-=make complexity= is a report rather than a gate; see
-[[file:docs/implementation.org][docs/implementation.org]] for what it counts and for how the two modes are
-built.
+=pre-commit= runs them too, with the complexity report.  See
+[[file:docs/implementation.org][docs/implementation.org]] for how the two modes are built.
 
 ** Contributions
 

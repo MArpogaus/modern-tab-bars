@@ -111,25 +111,24 @@ hid no row.
 * The tab bar in a terminal
 
 A terminal paints the tab bar row in the redisplay that turns the bar
-on.  With =tab-bar-format-menu-bar= in the format, a tab that changes
-before that redisplay leaves the row blank for the rest of the session,
-and neither =force-mode-line-update= nor =redraw-display= brings it
-back.  Measured with Emacs 30.2, in tmux 3.7 and under pyte.  So the
-format is filtered on a terminal and the menu button goes; =M-`=
-reaches the menu there in any case.
+on.  With a menu button in the format, a tab that changes before that
+redisplay leaves the row blank for the rest of the session, and neither
+=force-mode-line-update= nor =redraw-display= brings it back.  Measured
+with Emacs 30.2, in tmux 3.7 and under pyte.  So the entry that draws
+the menu button answers with nothing on a terminal; =M-`= reaches the
+menu there in any case.  The entry stays in the format and answers per
+redisplay, so a daemon answers for each of its frames.
 
 The spacers are the same story.  A =space-width= display property
 paints no part of a cell in a terminal, and one such item in the format
 leaves the whole row unpainted, still showing what stood in it before.
-A terminal gets a plain space instead.
+So the spacers answer with nothing there too.
 
 * Complexity
 
-=make complexity= reports the cognitive complexity of every function,
-counted the way SonarSource defines it: a branch costs one, a branch
-inside a branch costs one plus its depth, a sequence of =and= or =or=
-costs one, and a straight line costs nothing.  It is a report and not a
-gate — the number says how much a reader has to hold in their head, and
-15 is where a function is worth a second look.
-
-The tool is =tools/complexity.el=, shared with the other packages here.
+The =elisp-complexity= pre-commit hook reports the cognitive complexity
+of every function, counted the way SonarSource defines it: a branch
+costs one, a branch inside a branch costs one plus its depth, a
+sequence of =and= or =or= costs one, and a straight line costs nothing.
+The number says how much a reader has to hold in their head, and 15 is
+where a function is worth a second look.
