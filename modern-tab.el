@@ -233,16 +233,27 @@ and a value the reader had set with `setq' was thrown away for
 whatever the custom file said.")
 
 (defun modern-tab-borrow (mode &rest symbols)
-  "Keep what SYMBOLS hold, in the name of MODE, before it sets them."
-  (setf (alist-get mode modern-tab--borrowed)
-        (mapcar (lambda (symbol) (cons symbol (symbol-value symbol)))
-                symbols)))
+  "Keep what SYMBOLS hold, in the name of MODE, before it sets them.
+Non-nil where this call is the one that borrowed.  Nothing is kept for
+a MODE that has borrowed already: `define-minor-mode' runs its body on
+every call and a nil argument means enable, so a mode enabled twice
+would otherwise record the values it set itself and never give the
+reader's back."
+  (unless (alist-get mode modern-tab--borrowed)
+    (setf (alist-get mode modern-tab--borrowed)
+          (mapcar (lambda (symbol) (cons symbol (symbol-value symbol)))
+                  symbols))
+    t))
 
 (defun modern-tab-give-back (mode)
-  "Put back what MODE borrowed, exactly as it was."
-  (dolist (cell (alist-get mode modern-tab--borrowed))
-    (set (car cell) (cdr cell)))
-  (setf (alist-get mode modern-tab--borrowed nil t) nil))
+  "Put back what MODE borrowed, exactly as it was.
+Nil where MODE has nothing borrowed, which is a mode that was never on:
+its teardown must give nothing back and switch nothing off."
+  (when-let* ((cells (alist-get mode modern-tab--borrowed)))
+    (dolist (cell cells)
+      (set (car cell) (cdr cell)))
+    (setf (alist-get mode modern-tab--borrowed nil t) nil)
+    t))
 
 ;;;; What a mode gives back when it is turned off
 

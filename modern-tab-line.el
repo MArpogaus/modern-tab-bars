@@ -255,9 +255,11 @@ because this mode was turned off.")
   (remove-hook 'buffer-list-update-hook #'modern-tab-line-update-window)
   (remove-hook 'window-state-change-hook #'modern-tab-line-update-frame)
   (modern-tab-line--show-everywhere)
-  (modern-tab-give-back 'modern-tab-line-mode)
-  (unless modern-tab-line--had-the-row
-    (global-tab-line-mode -1)))
+  ;; Nothing borrowed is a mode that was never on, and a stock
+  ;; `global-tab-line-mode' is not this package's to switch off.
+  (when (modern-tab-give-back 'modern-tab-line-mode)
+    (unless modern-tab-line--had-the-row
+      (global-tab-line-mode -1))))
 
 ;;;###autoload
 (define-minor-mode modern-tab-line-mode
