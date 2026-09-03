@@ -56,7 +56,8 @@ key.  Every glyph is chosen at draw time and none at enable time: a
 daemon enables its modes with no frame at all, and one session can hold
 a terminal frame and a graphic frame together.  The table is emptied
 when a font arrives (=after-setting-font-hook=) and when an option an
-icon depends on is set.
+icon depends on is set; emptying it also clears the =tab-line-cache=
+parameter of every window, which is where a row already drawn is kept.
 
 * What a mode gives back
 

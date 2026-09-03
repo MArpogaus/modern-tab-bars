@@ -120,6 +120,15 @@ candidate — a box there."
   (modern-tab-forget)
   (should (equal (modern-tab-icon-for "a group" "!") "!")))
 
+(ert-deftest modern-tab-test-forgetting-an-icon-clears-the-row-drawn ()
+  "A row of the tab line already drawn is kept in a window parameter.
+The key it is kept under says nothing about the options of this
+package, so the row would otherwise keep the glyph of the option before
+the change."
+  (set-window-parameter nil 'tab-line-cache 'a-row-of-the-option-before)
+  (modern-tab-forget)
+  (should-not (window-parameter nil 'tab-line-cache)))
+
 (ert-deftest modern-tab-test-setting-an-option-forgets-the-icons ()
   "An option an icon depends on empties the table when it is set."
   (modern-tab-icon-for "a group" "*")

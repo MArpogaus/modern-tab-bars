@@ -198,8 +198,16 @@ hold both.  `modern-tab-forget' empties this where the answer can
 change: another icon list, or a font arriving.")
 
 (defun modern-tab-forget (&rest _)
-  "Forget the icons answered so far."
-  (clrhash modern-tab--icons))
+  "Forget the icons answered so far, and draw the rows again.
+A row of the tab line is kept in the `tab-line-cache' parameter of its
+window, under a key that says nothing about the options of this
+package: a row already drawn would keep the glyph the option held
+before the change."
+  (clrhash modern-tab--icons)
+  (walk-windows (lambda (window)
+                  (set-window-parameter window 'tab-line-cache nil))
+                'no-mini t)
+  (force-mode-line-update t))
 
 (defun modern-tab-set-and-forget (symbol value)
   "Set SYMBOL to VALUE and forget the icons answered before it changed.
