@@ -153,7 +153,7 @@ row formats: the face of a terminal bar would not survive the
                                     (modern-tab-bar-name-format tab 1)))))
     (let ((tab-bar-close-button-show 'non-selected))
       (should-not (string-suffix-p "X" (substring-no-properties
-                                       (modern-tab-bar-name-format tab 1)))))
+                                        (modern-tab-bar-name-format tab 1)))))
     (let ((tab-bar-close-button-show nil))
       (should-not (string-suffix-p "X" (substring-no-properties
                                         (modern-tab-bar-name-format tab 1)))))))

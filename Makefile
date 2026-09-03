@@ -4,6 +4,7 @@
 #   make checkdoc  documentation style
 #   make lint      package-lint, the MELPA rules
 #   make test      ERT test suite
+#   make format    indent every Lisp file in place
 #   make relint    the regular expressions
 #   make clean     remove build output and the tool sandbox
 #
@@ -20,6 +21,8 @@ DEPS    ?= package-lint relint
 
 SRC  := $(filter-out %-autoloads.el %-pkg.el,$(wildcard *.el))
 TEST := $(wildcard test/*.el)
+# Everything written in Lisp, the parts that are no package included.
+LISP := $(SRC) $(wildcard test/*.el) $(wildcard tools/*.el)
 
 # Elisp programs live in variables: make joins their continuation lines,
 # while a backslash inside a quoted recipe line would reach Emacs as is.
@@ -37,7 +40,7 @@ checkdoc = (progn (require (quote checkdoc)) \
 
 BATCH = $(EMACS) -Q --batch -L . -L test -L tools --eval '$(init)'
 
-.PHONY: all compile checkdoc lint relint test clean
+.PHONY: all compile checkdoc lint relint test format clean
 
 all: compile checkdoc lint relint test
 
@@ -66,6 +69,14 @@ relint: $(STAMP)
 	@$(BATCH) -l relint -f relint-batch $(SRC) $(TEST)
 test: $(STAMP)
 	@$(BATCH) $(addprefix -l ,$(TEST)) -f ert-run-tests-batch-and-exit
+
+# The formatter loads each file before indenting it, so a macro of this
+# package indents its body the way its `declare' says; that needs the
+# load path and the dependencies, which is why it wants the sandbox.
+# It answers 1 when it had to change something, which is how the hook
+# stops a commit; from make that is a job done, not a failure.
+format: $(STAMP)
+	@$(BATCH) -l tools/indent.el $(LISP) || true
 
 clean:
 	@rm -rf $(SANDBOX) ./*.elc test/*.elc
