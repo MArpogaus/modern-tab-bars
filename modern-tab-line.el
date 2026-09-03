@@ -116,8 +116,27 @@ built again on every command."
          (modern-tab-glyph (nerd-icons-icon-for-file name) ""))))))
 
 (defun modern-tab-line--buffer (tab)
-  "Return the buffer TAB stands for."
-  (if (bufferp tab) tab (cdr (assq 'buffer tab))))
+  "Return the buffer TAB stands for, or nil where it stands for none.
+A tab is a buffer or an alist, and `tab-line-tabs-function' is public:
+a reader can set it to a function that answers with neither."
+  (cond ((bufferp tab) tab)
+        ((consp tab) (cdr (assq 'buffer tab)))))
+
+(defun modern-tab-line-close-button ()
+  "Return the close button of the tab line, drawn for this display.
+Per redisplay and not once at enable: `modern-tab-icon-for' keeps the
+answer per kind of display, so a daemon serving a graphic frame and a
+terminal frame gives each the glyph it can draw.  Settled at enable it
+was settled for the display the enable happened on — and a daemon
+enables its modes with no frame at all, where the answer is a
+terminal's."
+  (propertize (modern-tab-icon-for
+               'line-close-button
+               (lambda () (apply #'modern-tab-glyph
+                                 modern-tab-line-close-glyphs)))
+              'keymap tab-line-tab-close-map
+              'mouse-face 'tab-line-close-highlight
+              'help-echo "Click to close tab"))
 
 (defun modern-tab-line-tab-name (buffer &optional _buffers)
   "Return the name shown on the tab of BUFFER, with its icon.
@@ -139,8 +158,13 @@ The indicator is not in `modern-tab-line-tab-name', because
 formats with the face of the row and `propertize' overwrites a face: a
 terminal indicator, which carries its colour in a face of its own, came
 out in the colour of the row.  The image form of a graphic frame
-survived, which is why this only showed in a terminal."
-  (let ((selected (eq (modern-tab-line--buffer tab) (window-buffer))))
+survived, which is why this only showed in a terminal.
+
+`tab-line-close-button' is bound here rather than set at enable, so
+that the row of every frame gets the glyph that frame can draw.  See
+`modern-tab-line-close-button'."
+  (let ((selected (eq (modern-tab-line--buffer tab) (window-buffer)))
+        (tab-line-close-button (modern-tab-line-close-button)))
     (concat (modern-tab-indicator
              modern-tab-line-indicator-height
              (if selected modern-tab-line-active-indicator-width
@@ -236,20 +260,14 @@ because this mode was turned off.")
                            'tab-line-close-tab-function
                            'tab-line-separator
                            'tab-line-new-button-show
-                           'tab-line-close-button-show
-                           'tab-line-close-button)
+                           'tab-line-close-button-show)
     (setq modern-tab-line--had-the-row global-tab-line-mode))
   (setq tab-line-tab-name-function #'modern-tab-line-tab-name
         tab-line-tab-name-format-function #'modern-tab-line-tab-format
         tab-line-close-tab-function #'modern-tab-line-close-tab
         tab-line-separator ""
         tab-line-new-button-show nil
-        tab-line-close-button-show 'selected
-        tab-line-close-button
-        (propertize (apply #'modern-tab-glyph modern-tab-line-close-glyphs)
-                    'keymap tab-line-tab-close-map
-                    'mouse-face 'tab-line-close-highlight
-                    'help-echo "Click to close tab"))
+        tab-line-close-button-show 'selected)
   (global-tab-line-mode 1)
   (modern-tab-line-update-frame))
 

@@ -81,8 +81,9 @@ buffer hides its tab line; set =modern-tab-line-auto-hide= to nil to
 keep the row.
 
 Each mode also sets what Emacs draws its row with — the tab bar's
-separator and its automatic width, the tab line's two buttons — and
-gives every one of them back when it is turned off.
+separator and its automatic width, the tab line's separator and which
+of its buttons show — and gives every one of them back when it is
+turned off.
 
 On a terminal the tab bar shows no menu button, whatever
 =modern-tab-bar-format= says.  See [[file:docs/implementation.org][docs/implementation.org]] for the

@@ -49,20 +49,35 @@ area is refused on a terminal: that is where a nerd font keeps its
 glyphs, and no terminal font can be assumed to carry them.
 
 Finding a nerd icon walks the table of its style — 6880 entries for the
-material design one — so an answer is kept per key and per display.  A
-terminal and a graphic frame answer differently and one session can
-hold both, which is why the display is part of the key.  The table is
-emptied when a font arrives (=after-setting-font-hook=) and when an
-option an icon depends on is set.
+material design one — so an answer is kept per key and per kind of
+display.  A terminal and a graphic frame answer differently and one
+session can hold both, which is why the kind of display is part of the
+key.  Every glyph is chosen at draw time and none at enable time: a
+daemon enables its modes with no frame at all, and one session can hold
+a terminal frame and a graphic frame together.  The table is emptied
+when a font arrives (=after-setting-font-hook=) and when an option an
+icon depends on is set.
 
 * What a mode gives back
 
-Both modes set variables that belong to Emacs, and both put them back:
-=custom-reevaluate-setting= gives a variable the value its own
-customization says it has, which is the value the reader would have had
-without the mode.  The buttons of the tab bar have no public way back,
-so the teardown calls =tab-bar--load-buttons=, the function that made
-them.
+Both modes set variables that belong to Emacs, and both put back what
+they found.  =modern-tab-borrow= keeps the value of each variable under
+the name of the mode before the mode sets it, and =modern-tab-give-back=
+writes those values back.  It keeps nothing for a mode that has
+borrowed already: =define-minor-mode= runs its body on every call, and a
+mode enabled twice would otherwise record the values it set itself.
+
+=custom-reevaluate-setting= was the restore before this, and it is the
+wrong tool twice over.  A plain =defvar= has no standard value, so it
+was set to nil — =tab-line-close-button= came back as nothing and the
+stock tab line lost its close button.  And a value the reader had set
+with =setq= was thrown away for whatever the custom file said.
+
+Neither mode sets a button of Emacs any more.  The tab bar draws its
+own buttons from its format, and the tab line binds
+=tab-line-close-button= while it formats a tab.  A button settled at
+enable time is settled for one kind of display, and a daemon enables
+its modes with no frame at all.
 
 * The tab line hides itself
 

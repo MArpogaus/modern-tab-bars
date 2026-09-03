@@ -192,7 +192,7 @@ frame has the font, and such a glyph without the font is a hex box."
 ;;;; Icons
 
 (defvar modern-tab--icons (make-hash-table :test #'equal)
-  "The icon each key answered, kept per display.
+  "The icon each key answered, kept per kind of display.
 A terminal and a graphic frame answer differently, and one session can
 hold both.  `modern-tab-forget' empties this where the answer can
 change: another icon list, or a font arriving.")
@@ -246,7 +246,7 @@ leave it uncalled where it already has the answer."
   "Return the icon SPEC names for KEY, and keep the answer.
 A row of tabs is built again on every command, and finding a nerd icon
 walks the table of its style — 6880 entries for the material design
-one — so the answer is kept, per key and per display.
+one — so the answer is kept, per key and per kind of display.
 
 SPEC is read only where KEY has no answer yet: where it has one, SPEC
 is ignored and the kept answer comes back, so a caller that changes

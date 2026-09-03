@@ -318,7 +318,41 @@ One table serves both rows, so the key says which row asked."
   (with-temp-buffer
     (should (eq (modern-tab-line--buffer (current-buffer)) (current-buffer)))
     (should (eq (modern-tab-line--buffer `((buffer . ,(current-buffer))))
-                (current-buffer)))))
+                (current-buffer))))
+  ;; `tab-line-tabs-function' is public, and a tab of a reader's own
+  ;; function need stand for no buffer at all.
+  (should-not (modern-tab-line--buffer 'something-else))
+  (should-not (modern-tab-line--buffer '((name . "no buffer here")))))
+
+(ert-deftest modern-tab-line-test-the-close-button-is-drawn-per-display ()
+  "The button is a function of the frame, not a string settled at enable.
+A daemon enables its modes with no frame at all, so a button settled
+then carried a terminal's answer onto every graphic frame after it."
+  (let ((modern-tab-line-close-glyphs '("Z")))
+    (modern-tab-forget)
+    (let ((button (modern-tab-line-close-button)))
+      (should (equal (substring-no-properties button) "Z"))
+      (should (eq (get-text-property 0 'keymap button) tab-line-tab-close-map))
+      (should (eq (get-text-property 0 'mouse-face button)
+                  'tab-line-close-highlight)))))
+
+(ert-deftest modern-tab-line-test-the-row-draws-the-button-of-its-frame ()
+  "`modern-tab-line-tab-format' binds the button the row formats with."
+  (let ((modern-tab-line-close-glyphs '("Z"))
+        (modern-tab-line-icon-function nil)
+        (modern-tab-line-active-indicator-width 0)
+        (tab-line-close-button-show 'selected)
+        (tab-line-tab-name-function #'modern-tab-line-tab-name)
+        (tab-line-close-button "SETTLED"))
+    (modern-tab-forget)
+    (with-temp-buffer
+      (set-window-buffer nil (current-buffer))
+      (let ((tabs (list (current-buffer))))
+        (should (string-suffix-p
+                 "Z" (substring-no-properties
+                      (modern-tab-line-tab-format (car tabs) tabs)))))
+      ;; and the binding is undone, so nothing of the reader's is lost
+      (should (equal tab-line-close-button "SETTLED")))))
 
 (ert-deftest modern-tab-line-test-closing-a-tab-kills-the-buffer ()
   "A buffer no other window shows is killed when its tab closes."
@@ -328,10 +362,9 @@ One table serves both rows, so the key says which row asked."
     (should-not (buffer-live-p buffer))))
 
 (ert-deftest modern-tab-line-test-the-mode-gives-the-tab-line-back ()
-  "Turning the mode off gives back every variable it set, the button too.
-`tab-line-close-button' is a plain `defvar', so the restore that read
-the custom file set it to nil and left the stock tab line with no close
-button at all."
+  "Turning the mode off gives back every variable it set.
+`tab-line-close-button' is not one of them any more: the row binds it
+per redisplay, so the reader's own button is left where it stood."
   (let ((tab-line-separator " | ")
         (tab-line-tab-name-function #'ignore)
         (tab-line-close-tab-function #'ignore)
@@ -343,7 +376,7 @@ button at all."
                      tab-line-close-button-show tab-line-close-button)))
       (modern-tab-line-mode 1)
       (should (eq tab-line-tab-name-function #'modern-tab-line-tab-name))
-      (should (memq #'modern-tab-line-update-window buffer-list-update-hook))
+      (should (equal tab-line-close-button "MINE"))
       (should global-tab-line-mode)
       (modern-tab-line-mode -1)
       (should (equal (list tab-line-separator tab-line-tab-name-function
