@@ -46,19 +46,25 @@
   "Height of the bar beside a tab group, in pixels."
   :type 'natnum)
 
-(defcustom modern-tab-bar-indicator-width '(4 . 2)
-  "Width of the bar beside a tab group, in pixels.
-The car belongs to the selected group and the cdr to the others.
-Either can be nil or zero, which draws no bar at all."
-  :type '(cons (choice natnum (const :tag "None" nil))
-               (choice natnum (const :tag "None" nil))))
+(defcustom modern-tab-bar-active-indicator-width 4
+  "Width of the bar beside the selected tab group, in pixels.
+Nil or zero draws no bar at all."
+  :type '(choice natnum (const :tag "None" nil)))
 
-(defcustom modern-tab-bar-indicator-color '(mode-line-emphasis . shadow)
-  "Colour of the bar beside a tab group.
-The car belongs to the selected group and the cdr to the others.  Each
-is a colour name, or a face whose foreground is the colour."
-  :type '(cons (choice color face (const :tag "None" nil))
-               (choice color face (const :tag "None" nil))))
+(defcustom modern-tab-bar-inactive-indicator-width 2
+  "Width of the bar beside a tab group that is not selected, in pixels.
+Nil or zero draws no bar at all."
+  :type '(choice natnum (const :tag "None" nil)))
+
+(defcustom modern-tab-bar-active-indicator-color 'mode-line-emphasis
+  "Colour of the bar beside the selected tab group.
+A colour name, or a face whose foreground is the colour."
+  :type '(choice color face (const :tag "None" nil)))
+
+(defcustom modern-tab-bar-inactive-indicator-color 'shadow
+  "Colour of the bar beside a tab group that is not selected.
+A colour name, or a face whose foreground is the colour."
+  :type '(choice color face (const :tag "None" nil)))
 
 (defcustom modern-tab-bar-icons '(("HOME" :style "suc" :icon "custom-emacs"))
   "Alist of the icon each tab group shows.
@@ -88,7 +94,7 @@ goes onto the tab bar.  Nil shows the name as it is."
   "Command the new button of the tab bar runs."
   :type 'function)
 
-(defcustom modern-tab-bar-new-icon '((symbol "  ") (text " + "))
+(defcustom modern-tab-bar-new-icon '((symbol "  ") (text " + "))
   "How the new button is drawn, as `define-icon' takes it."
   :type '(repeat sexp))
 
@@ -172,9 +178,12 @@ SELECTED is non-nil for the group of the current tab.  This is what
   (let ((name (funcall tab-bar-tab-group-function tab))
         (face (if selected 'tab-bar-tab-group-current
                 'tab-bar-tab-group-inactive)))
-    (concat (modern-tab-indicator-for selected modern-tab-bar-indicator-height
-                                    modern-tab-bar-indicator-width
-                                    modern-tab-bar-indicator-color)
+    (concat (modern-tab-indicator
+             modern-tab-bar-indicator-height
+             (if selected modern-tab-bar-active-indicator-width
+               modern-tab-bar-inactive-indicator-width)
+             (if selected modern-tab-bar-active-indicator-color
+               modern-tab-bar-inactive-indicator-color))
             (propertize (concat " " (modern-tab-bar--group-icon name) " "
                                 (if (functionp modern-tab-bar-group-name-function)
                                     (funcall modern-tab-bar-group-name-function

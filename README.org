@@ -80,14 +80,18 @@ The indicator is the vertical bar beside a tab.  Both modes take the
 same two options for it, and both read them the same way: the car
 belongs to the selected tab, the cdr to the others.
 
-| Option                             | Default                        |
-|------------------------------------+--------------------------------|
-| =modern-tab-bar-indicator-width=   | ~(4 . 2)~, in pixels           |
-| =modern-tab-bar-indicator-color=   | ~(mode-line-emphasis . shadow)~ |
-| =modern-tab-bar-indicator-height=  | ~25~, in pixels                |
-| =modern-tab-line-indicator-width=  | ~(3 . 0)~, in pixels           |
-| =modern-tab-line-indicator-color=  | ~(mode-line-emphasis . shadow)~ |
-| =modern-tab-line-indicator-height= | ~20~, in pixels                |
+| Option                                      | Default              |
+|---------------------------------------------+----------------------|
+| =modern-tab-bar-active-indicator-width=     | ~4~, in pixels       |
+| =modern-tab-bar-inactive-indicator-width=   | ~2~, in pixels       |
+| =modern-tab-bar-active-indicator-color=     | ~mode-line-emphasis~ |
+| =modern-tab-bar-inactive-indicator-color=   | ~shadow~             |
+| =modern-tab-bar-indicator-height=           | ~25~, in pixels      |
+| =modern-tab-line-active-indicator-width=    | ~3~, in pixels       |
+| =modern-tab-line-inactive-indicator-width=  | ~0~, in pixels       |
+| =modern-tab-line-active-indicator-color=    | ~mode-line-emphasis~ |
+| =modern-tab-line-inactive-indicator-color=  | ~shadow~             |
+| =modern-tab-line-indicator-height=          | ~20~, in pixels      |
 
 A width of nil or zero draws no indicator at all.  A colour is a colour
 name or a face, whose foreground is then the colour.  A terminal has no

@@ -46,20 +46,23 @@
                  (face-foreground 'default nil 'default)))
   (should-not (modern-tab--color nil)))
 
-(ert-deftest modern-tab-test-the-bar-of-a-tab-takes-the-right-half ()
-  "The car of each option belongs to the selected tab, the cdr to the rest."
+(ert-deftest modern-tab-test-a-tab-reads-the-option-of-its-state ()
+  "Each state has its own width and its own colour.
+The selected tab of the tab line takes a bar; the others take none,
+which is what a width of zero asks for."
   (skip-unless (not (display-graphic-p)))
-  (let ((width '(4 . 0))
-        (color '("red" . "blue")))
-    (should (equal (substring-no-properties
-                    (modern-tab-indicator-for t 20 width color))
-                   "|"))
-    (should (equal (get-text-property
-                    0 'face (modern-tab-indicator-for t 20 width color))
-                   '(:foreground "red" :background "red")))
-    ;; The others have no bar at all here, which is what a width of
-    ;; zero asks for.
-    (should (equal (modern-tab-indicator-for nil 20 width color) ""))))
+  (let ((modern-tab-line-active-indicator-width 3)
+        (modern-tab-line-inactive-indicator-width 0)
+        (modern-tab-line-active-indicator-color "red")
+        (modern-tab-line-icon-function nil))
+    (with-temp-buffer
+      (set-window-buffer nil (current-buffer))
+      (let ((selected (modern-tab-line-tab-name (current-buffer)))
+            (other (modern-tab-line-tab-name (get-buffer-create "*other*"))))
+        (should (equal (get-text-property 0 'face selected)
+                       '(:foreground "red" :background "red")))
+        (should (string-prefix-p "|" (substring-no-properties selected)))
+        (should (string-prefix-p " " (substring-no-properties other)))))))
 
 ;;;; Glyphs and icons
 

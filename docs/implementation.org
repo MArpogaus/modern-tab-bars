@@ -19,10 +19,10 @@ face is only put on where a colour was given: a face attribute of nil
 is not "leave it alone", it is an error the display logs on every
 redisplay.
 
-Each mode names the two widths and the two colours in one option
-apiece, as a cons: the car belongs to the selected tab and the cdr to
-the others.  =modern-tab-indicator-for= is what reads that shape, so
-the two modes cannot drift apart.
+Each mode names an option per state: a width and a colour for the
+selected tab, a width and a colour for the others.  The two modes name
+them the same way, so a reader who has set one knows how to set the
+other.
 
 * Icons, and what a frame can draw
 

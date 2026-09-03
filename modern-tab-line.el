@@ -46,19 +46,25 @@
   "Height of the bar beside a tab, in pixels."
   :type 'natnum)
 
-(defcustom modern-tab-line-indicator-width '(3 . 0)
-  "Width of the bar beside a tab, in pixels.
-The car belongs to the selected tab and the cdr to the others.  Either
-can be nil or zero, which draws no bar at all."
-  :type '(cons (choice natnum (const :tag "None" nil))
-               (choice natnum (const :tag "None" nil))))
+(defcustom modern-tab-line-active-indicator-width 3
+  "Width of the bar beside the selected tab, in pixels.
+Nil or zero draws no bar at all."
+  :type '(choice natnum (const :tag "None" nil)))
 
-(defcustom modern-tab-line-indicator-color '(mode-line-emphasis . shadow)
-  "Colour of the bar beside a tab.
-The car belongs to the selected tab and the cdr to the others.  Each is
-a colour name, or a face whose foreground is the colour."
-  :type '(cons (choice color face (const :tag "None" nil))
-               (choice color face (const :tag "None" nil))))
+(defcustom modern-tab-line-inactive-indicator-width 0
+  "Width of the bar beside a tab that is not selected, in pixels.
+Nil or zero draws no bar at all."
+  :type '(choice natnum (const :tag "None" nil)))
+
+(defcustom modern-tab-line-active-indicator-color 'mode-line-emphasis
+  "Colour of the bar beside the selected tab.
+A colour name, or a face whose foreground is the colour."
+  :type '(choice color face (const :tag "None" nil)))
+
+(defcustom modern-tab-line-inactive-indicator-color 'shadow
+  "Colour of the bar beside a tab that is not selected.
+A colour name, or a face whose foreground is the colour."
+  :type '(choice color face (const :tag "None" nil)))
 
 (defcustom modern-tab-line-icon-function #'modern-tab-line-file-icon
   "Function that returns the icon of a tab, called with its buffer.
@@ -91,12 +97,15 @@ the frame cannot draw the glyph."
 (defun modern-tab-line-tab-name (buffer &optional _buffers)
   "Return the name shown on the tab of BUFFER.
 This is what `tab-line-tab-name-function' is set to."
-  (let ((icon (and modern-tab-line-icon-function
-                   (funcall modern-tab-line-icon-function buffer))))
-    (concat (modern-tab-indicator-for (eq buffer (window-buffer))
-                                    modern-tab-line-indicator-height
-                                    modern-tab-line-indicator-width
-                                    modern-tab-line-indicator-color)
+  (let* ((icon (and modern-tab-line-icon-function
+                    (funcall modern-tab-line-icon-function buffer)))
+         (selected (eq buffer (window-buffer))))
+    (concat (modern-tab-indicator
+             modern-tab-line-indicator-height
+             (if selected modern-tab-line-active-indicator-width
+               modern-tab-line-inactive-indicator-width)
+             (if selected modern-tab-line-active-indicator-color
+               modern-tab-line-inactive-indicator-color))
             " "
             (if (and icon (not (string-empty-p icon))) (concat icon " ") "")
             (buffer-name buffer)

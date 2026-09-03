@@ -99,15 +99,6 @@ instead.  Thanks to doom-modeline for the idea."
      (t (propertize "|" 'face (and color (list :foreground color
                                                :background color)))))))
 
-(defun modern-tab-indicator-for (selected height width color)
-  "Return the bar of a tab that is SELECTED, or of one that is not.
-HEIGHT is in pixels.  WIDTH and COLOR are cons cells whose car belongs
-to the selected tab and whose cdr belongs to the others — the shape
-both modes give their options."
-  (modern-tab-indicator height
-                      (if selected (car width) (cdr width))
-                      (if selected (car color) (cdr color))))
-
 ;;;; Glyphs, and what a frame can draw
 
 (defun modern-tab--drawable-p (string)
