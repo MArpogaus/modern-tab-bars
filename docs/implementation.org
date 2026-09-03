@@ -14,10 +14,10 @@ height, width and colour and kept in a hash table.  Building one means
 a fresh payload string and a spec the image cache then compares whole,
 and a row of tabs is built again on every command.
 
-A terminal has no images and draws one column of =|= instead.  The
-face is only put on where a colour was given: a face attribute of nil
-is not "leave it alone", it is an error the display logs on every
-redisplay.
+A frame without images — a terminal, or one built without PBM — draws
+one column of =|= instead.  The face is only put on where a colour was
+given: a face attribute of nil is not "leave it alone", it is an error
+the display logs on every redisplay.
 
 Each mode names an option per state: a width and a colour for the
 selected tab, a width and a colour for the others.  The two modes name
@@ -59,6 +59,21 @@ every window, so a window showing one buffer gets =tab-line-format= of
 =buffer-list-update-hook= for the selected window and
 =window-state-change-hook= for every window of the frame.  Turning the
 mode off takes the parameter off every window of every frame.
+
+* The tab bar in a terminal
+
+A terminal paints the tab bar row in the redisplay that turns the bar
+on.  With =tab-bar-format-menu-bar= in the format, a tab that changes
+before that redisplay leaves the row blank for the rest of the session,
+and neither =force-mode-line-update= nor =redraw-display= brings it
+back.  Measured with Emacs 30.2, in tmux 3.7 and under pyte.  So the
+format is filtered on a terminal and the menu button goes; =M-`=
+reaches the menu there in any case.
+
+The spacers are the same story.  A =space-width= display property
+paints no part of a cell in a terminal, and one such item in the format
+leaves the whole row unpainted, still showing what stood in it before.
+A terminal gets a plain space instead.
 
 * Complexity
 

@@ -25,10 +25,11 @@
 ;;; Commentary:
 
 ;; `modern-tab-line-mode' gives the tab line a bar beside the selected
-;; tab, an icon for each buffer, and a close button that closes what an
-;; editor would close: the buffer, unless another window shows it, and
-;; the window when its last tab goes.  Every part of the look is an
-;; option, and every option matches one of `modern-tab-bar-mode'.
+;; tab, an icon for each buffer, and a close button that buries the
+;; buffer where another window still shows it, kills it where none
+;; does, and deletes the window with its last tab.  Every part of the
+;; look is an option; the indicator options match those of
+;; `modern-tab-bar-mode' name for name.
 
 ;;; Code:
 
@@ -85,14 +86,20 @@ of every window."
 ;;;; The parts of a tab
 
 (defun modern-tab-line-file-icon (buffer)
-  "Return the nerd-icons glyph for the file BUFFER visits.
+  "Return the nerd-icons glyph for the name of BUFFER.
+The name is what nerd-icons is asked about, as though it were a file
+name, so a buffer visiting no file still gets the icon its name earns.
 Nothing where nerd-icons is not installed, and a plain character where
-the frame cannot draw the glyph."
+the frame cannot draw the glyph.
+
+The lookup is handed over rather than done: `modern-tab-icon-for' calls
+it only where it has no answer for this name yet, and a row of tabs is
+built again on every command."
   (when (fboundp 'nerd-icons-icon-for-file)
     (let ((name (buffer-name buffer)))
-      (modern-tab-icon-for name
-                               (modern-tab-glyph
-                                (nerd-icons-icon-for-file name) "")))))
+      (modern-tab-icon-for
+       name (lambda ()
+              (modern-tab-glyph (nerd-icons-icon-for-file name) ""))))))
 
 (defun modern-tab-line-tab-name (buffer &optional _buffers)
   "Return the name shown on the tab of BUFFER.
@@ -122,17 +129,20 @@ This is what `tab-line-tab-name-function' is set to."
   (> (length (tab-line-tabs-window-buffers)) 1))
 
 (defun modern-tab-line-close-tab (tab)
-  "Close TAB the way an editor would.
+  "Bury or kill the buffer of TAB, and delete the window with its last tab.
 The buffer is buried where another window still shows it and killed
-where none does, and the window goes with its last tab."
+where none does."
   (interactive (list (current-buffer)))
   (let ((window (selected-window))
         (last (not (modern-tab-line--several-p)))
         (buffer (modern-tab-line--buffer tab)))
     (if (length> (get-buffer-window-list buffer nil t) 1)
-        (bury-buffer)
+        ;; The buffer of the tab, which is the selected one only while
+        ;; `tab-line-close-button-show' is `selected'.
+        (bury-buffer buffer)
       (kill-buffer buffer))
     (when last
+      ;; The sole window of a frame cannot go.
       (ignore-errors (delete-window window)))))
 
 ;;;; Hiding a row that says nothing
@@ -183,12 +193,12 @@ where none does, and the window goes with its last tab."
   (remove-hook 'window-state-change-hook #'modern-tab-line-update-frame)
   (modern-tab-line--show-everywhere)
   (modern-tab-restore 'tab-line-tab-name-function
-                          'tab-line-close-tab-function
-                          'tab-line-separator
-                          'tab-line-new-button-show
-                          'tab-line-close-button-show
-                          'tab-line-close-button)
-  (global-tab-line-mode -1))
+                      'tab-line-close-tab-function
+                      'tab-line-separator
+                      'tab-line-new-button-show
+                      'tab-line-close-button-show
+                      'tab-line-close-button)
+                      (global-tab-line-mode -1))
 
 ;;;###autoload
 (define-minor-mode modern-tab-line-mode

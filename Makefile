@@ -5,7 +5,6 @@
 #   make lint      package-lint, the MELPA rules
 #   make test      ERT test suite
 #   make relint    the regular expressions
-#   make complexity  what each function costs a reader
 #   make clean     remove build output and the tool sandbox
 #
 # The checks install their tools and this package's dependencies into
@@ -34,7 +33,7 @@ checkdoc = (progn (require (quote checkdoc)) \
 
 BATCH = $(EMACS) -Q --batch -L . -L test -L tools --eval '$(init)'
 
-.PHONY: all compile checkdoc lint relint test complexity clean
+.PHONY: all compile checkdoc lint relint test clean
 
 all: compile checkdoc lint relint test
 
@@ -60,13 +59,6 @@ lint: $(SANDBOX)
 
 relint: $(SANDBOX)
 	@$(BATCH) -l relint -f relint-batch $(SRC) $(TEST)
-
-# A report and not a gate: there is no complexity rule to fail, only
-# functions worth looking at.  See tools/complexity.el.
-complexity:
-	@$(BATCH) -l complexity \
-	  --eval '(complexity-report command-line-args-left)' $(SRC)
-
 test: $(SANDBOX)
 	@$(BATCH) $(addprefix -l ,$(TEST)) -f ert-run-tests-batch-and-exit
 

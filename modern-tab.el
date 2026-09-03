@@ -28,13 +28,16 @@
 
 ;; Two minor modes that give the two rows of tabs Emacs has the look of
 ;; the editors people come here from: a coloured bar beside the selected
-;; tab, an icon on every tab, and a close button that behaves.
+;; tab, an icon on every tab, and — on the tab line — a close button
+;; that buries a buffer another window shows and kills one no window
+;; does.
 ;;
 ;;   `modern-tab-bar-mode'   the tab bar, one tab per tab group
 ;;   `modern-tab-line-mode'  the tab line, one tab per window buffer
 ;;
-;; The two are independent — turn on either — and they take the same
-;; kinds of customization under matching names.
+;; The two are independent — turn on either.  The indicator options
+;; carry matching names in both; the icon options do not, because a tab
+;; group is named by a string and a tab of the tab line by a buffer.
 ;;
 ;; This file is the common one: the indicator beside a tab, the glyph
 ;; fallback, the icon table and the way a mode gives Emacs its
@@ -44,8 +47,11 @@
 ;; `modern-tab-line-mode' both live under `modern-tab-'.
 ;;
 ;; Icons come from nerd-icons where it is installed and the frame has
-;; the font.  Where it is not, every glyph falls back to a plain
-;; character, so a terminal shows the same tabs in ASCII.
+;; the font.  A graphic frame without the font falls back to a plain
+;; character: `font-at' answers for the font that will really draw.  A
+;; terminal is only asked whether it can encode the character, so a
+;; UTF-8 terminal without a nerd font shows a box rather than a
+;; fallback — name plain strings in the icon options there.
 
 ;;; Code:
 
@@ -78,8 +84,9 @@ WIDTH of nil or zero is no bar at all, and the answer is then the empty
 string.  COLOR is a colour name or a face, as `modern-tab--color'
 takes it.
 
-A terminal has no images and draws one column of a vertical line
-instead.  Thanks to doom-modeline for the idea."
+A frame without images — a terminal, or one built without PBM — draws
+one column of a vertical line instead.  Thanks to doom-modeline for the
+idea."
   (let ((color (modern-tab--color color)))
     (cond
      ((or (null width) (zerop width)) "")
@@ -110,7 +117,11 @@ answers for a font that draws nothing here.
 
 `font-at' answers with the font that will really draw the character:
 the one the face names, the one a fallback finds, or nil where none
-will."
+will.
+
+A terminal has no font to ask, and `char-displayable-p' answers for the
+coding system instead: a UTF-8 terminal says yes to a glyph it will
+draw as a box.  There is nothing better to ask it."
   (and (stringp string)
        (not (string-empty-p string))
        (if (display-graphic-p)
@@ -146,8 +157,12 @@ A `:set' function for every option an icon depends on."
 
 (defun modern-tab--nerd-icon (spec)
   "Return the nerd-icons glyph SPEC names, or a plain character.
-SPEC is a plist with `:style' and `:icon', as nerd-icons names them.
-Inspired by nerd-icons-corfu."
+SPEC is a plist with `:style' and `:icon'.  The style is the middle of
+a nerd-icons function name — \"oct\" for `nerd-icons-octicon', \"md\"
+for `nerd-icons-mdicon' — and the icon is the glyph name without its
+\"nf-<style>-\" front.  The \"suc\" style is the exception: its glyphs
+are named \"nf-<icon>\", with no style in the middle.  Inspired by
+nerd-icons-corfu."
   (let* ((style (plist-get spec :style))
          (icon (plist-get spec :icon))
          (fun (intern (concat "nerd-icons-" style "icon")))
@@ -158,16 +173,26 @@ Inspired by nerd-icons-corfu."
 
 (defun modern-tab-icon (spec)
   "Return SPEC as the string that shows on a tab.
-A string stands for itself, a plist names a nerd icon, nil is nothing."
+A string stands for itself, a plist names a nerd icon, a function is
+called for one, and nil is nothing.  The function is what a caller
+whose lookup is expensive passes, so that `modern-tab-icon-for' can
+leave it uncalled where it already has the answer."
   (cond ((null spec) "")
         ((stringp spec) spec)
+        ((functionp spec) (funcall spec))
         (t (modern-tab--nerd-icon spec))))
 
 (defun modern-tab-icon-for (key spec)
   "Return the icon SPEC names for KEY, and keep the answer.
 A row of tabs is built again on every command, and finding a nerd icon
 walks the table of its style — 6880 entries for the material design
-one — so the answer is kept, per key and per display."
+one — so the answer is kept, per key and per display.
+
+SPEC is read only where KEY has no answer yet: where it has one, SPEC
+is ignored and the kept answer comes back, so a caller that changes
+SPEC calls `modern-tab-forget' first.  A SPEC that is a function is not
+called at all on a hit, which is how a caller keeps an expensive lookup
+out of every redisplay."
   (with-memoization (gethash (list key (display-graphic-p))
                              modern-tab--icons)
     (modern-tab-icon spec)))

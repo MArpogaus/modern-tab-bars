@@ -25,9 +25,10 @@
 ;;; Commentary:
 
 ;; `modern-tab-bar-mode' gives the tab bar a bar beside the selected tab
-;; group, an icon for each group, and buttons that read as buttons.
-;; Every part of the look is an option, and every option matches one of
-;; `modern-tab-line-mode'.
+;; group, an icon for each group, and a new button and a close button
+;; drawn with `define-icon', so a terminal gets their text form.  Every
+;; part of the look is an option; the indicator options match those of
+;; `modern-tab-line-mode' name for name.
 
 ;;; Code:
 
@@ -102,9 +103,12 @@ goes onto the tab bar.  Nil shows the name as it is."
   "How the close button is drawn, as `define-icon' takes it."
   :type '(repeat sexp))
 
-(defcustom modern-tab-bar-current-glyphs '("󰅂 " " " "› ")
+(defcustom modern-tab-bar-current-glyphs '("󰅂 " "› " "  ")
   "Glyphs that mark the selected tab, best first.
-The first one the frame can draw wins, so keep a plain character last."
+The first one the frame can draw wins, so keep a plain character last.
+A space is drawable everywhere, so a space among the candidates ends
+the search: two of them are the last resort here, and they are two
+columns wide, which is what the glyphs before them are."
   :type '(repeat string))
 
 (defcustom modern-tab-bar-format
@@ -241,10 +245,10 @@ This is what `tab-bar-tab-name-format-function' is set to."
   ;; function that made them.
   (tab-bar--load-buttons)
   (modern-tab-restore 'tab-bar-separator
-                          'tab-bar-auto-width
-                          'tab-bar-tab-group-format-function
-                          'tab-bar-tab-name-format-function
-                          'tab-bar-format))
+                      'tab-bar-auto-width
+                      'tab-bar-tab-group-format-function
+                      'tab-bar-tab-name-format-function
+                      'tab-bar-format))
 
 ;;;###autoload
 (define-minor-mode modern-tab-bar-mode

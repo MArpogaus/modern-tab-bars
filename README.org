@@ -28,57 +28,72 @@
 Emacs has two rows of tabs.  The =tab-bar= shows one tab per tab or tab
 group; the =tab-line= shows one tab per buffer of a window.  This
 package gives both the look of the editors people come here from: a
-coloured indicator beside the selected tab, an icon on every tab, and a
-close button that closes what you expect.
+coloured indicator beside the selected tab, an icon on every tab, and —
+on the tab line — a close button that buries a buffer another window
+still shows and kills one no window shows.
 
 [[file:img/screenshot-light.png]]
 
 [[file:img/screenshot-dark.png]]
 
-The two modes are independent, they take the same kinds of
-customization, and every option of one has a twin in the other.  Icons
-come from [[https://github.com/rainstormstudio/nerd-icons.el][nerd-icons]] where it is installed and the frame has the font.
-Where it is not, every glyph falls back to a plain character, so a
-terminal shows the same tabs in ASCII.
+The two modes are independent.  The five indicator options are named
+the same in both; the rest differ, because the two rows name their tabs
+differently — the tab bar keys its icons on the name of a group, the
+tab line asks a function for the icon of a buffer.
+
+Icons come from [[https://github.com/rainstormstudio/nerd-icons.el][nerd-icons]] where it is installed and the frame has the
+font.  A graphic frame without the font falls back to a plain
+character.  A terminal is only asked whether it can encode the glyph,
+not whether it has the font, so a UTF-8 terminal without a nerd font
+shows a box: name plain strings in the icon options there.
 
 ** Getting Started
 
 *** Installation
 
-The package is one Emacs and nothing else.  With =use-package= and a
-package manager that installs from a repository:
+The package needs Emacs 29.1 or later and nothing else.  nerd-icons is
+optional: install it for the glyphs, or name plain strings in the icon
+options.
+
+The package is called =modern-tab=, after its main file, and both modes
+are autoloaded from it:
 
 #+begin_src emacs-lisp
-  (use-package modern-tab-bar
-    :vc (:url "https://github.com/MArpogaus/modern-tab-bars")
-    :hook (after-init . modern-tab-bar-mode))
-
-  (use-package modern-tab-line
-    :vc (:url "https://github.com/MArpogaus/modern-tab-bars")
-    :hook (after-init . modern-tab-line-mode))
+  (use-package modern-tab
+    :vc (:url "https://github.com/MArpogaus/modern-tab-bars" :rev :newest)
+    :hook ((after-init . modern-tab-bar-mode)
+           (after-init . modern-tab-line-mode)))
 #+end_src
+
+Drop either hook to run one mode alone.
 
 *** Usage
 
 =M-x modern-tab-bar-mode= dresses the tab bar.  Turn on =tab-bar-mode=
 to see it.
 
-=M-x modern-tab-line-mode= dresses the tab line, and turns
-=global-tab-line-mode= on with it.  A window showing one buffer hides
-its tab line: a row with a single tab on it says nothing and costs a
-line of every window.  Set =modern-tab-line-auto-hide= to nil to keep
-the row.
+=M-x modern-tab-line-mode= dresses the tab line and turns
+=global-tab-line-mode= on.  Turning it off turns =global-tab-line-mode=
+off again, whether or not you had it on before.  A window showing one
+buffer hides its tab line; set =modern-tab-line-auto-hide= to nil to
+keep the row.
 
-Turning either mode off gives the stock look back, including the
-buttons.
+Each mode also sets what Emacs draws its row with — the tab bar's
+separator and its automatic width, the tab line's two buttons — and
+gives every one of them back when it is turned off.
+
+On a terminal the tab bar shows no menu button, whatever
+=modern-tab-bar-format= says.  See [[file:docs/implementation.org][docs/implementation.org]] for the
+measurement behind that.
 
 ** Customization
 
 *** The Indicator
 
-The indicator is the vertical bar beside a tab.  Both modes take the
-same two options for it, and both read them the same way: the car
-belongs to the selected tab, the cdr to the others.
+The indicator is the vertical bar beside a tab.  Each mode names five
+options for it: a width and a colour for the selected tab, a width and
+a colour for the others, and one height for both.  The two modes use
+the same names, with =modern-tab-bar-= or =modern-tab-line-= in front.
 
 | Option                                      | Default              |
 |---------------------------------------------+----------------------|
@@ -94,8 +109,8 @@ belongs to the selected tab, the cdr to the others.
 | =modern-tab-line-indicator-height=          | ~20~, in pixels      |
 
 A width of nil or zero draws no indicator at all.  A colour is a colour
-name or a face, whose foreground is then the colour.  A terminal has no
-images and draws one column of a vertical line instead.
+name or a face, whose foreground is then the colour.  A frame without
+images draws one column of a vertical line instead.
 
 *** The Tab Bar
 
@@ -123,6 +138,11 @@ glyph:
 The first pattern that matches the group name wins, and the patterns
 are matched with the case rules of whoever wrote them.
 
+The =:style= is the middle of a nerd-icons function name — =oct= for
+=nerd-icons-octicon=, =md= for =nerd-icons-mdicon= — and the =:icon= is
+the glyph name without its =nf-<style>-= front.  =M-x
+nerd-icons-insert= lists what there is.
+
 *** The Tab Line
 
 | Option                           | What it says                             |
@@ -131,9 +151,23 @@ are matched with the case rules of whoever wrote them.
 | =modern-tab-line-close-glyphs=   | the close button, best first              |
 | =modern-tab-line-auto-hide=      | whether a window with one buffer hides the row |
 
-The close button closes what an editor would: the buffer is buried
-where another window still shows it, killed where none does, and the
-window goes with its last tab.
+The close button buries the buffer where another window still shows
+it, kills it where none does, and deletes the window with its last tab.
+=modern-tab-line-close-tab= is that command, should you want it on a
+key.
+
+An icon function is called with a buffer and returns a string, or nil
+for no icon.  =modern-tab-glyph= names a preferred glyph and a
+fallback, and =modern-tab-icon-for= keeps the answer — it calls a
+function only where it has none yet:
+
+#+begin_src emacs-lisp
+  (defun my/tab-icon (buffer)
+    (modern-tab-icon-for (buffer-name buffer)
+                         (if (buffer-modified-p buffer) "● " "  ")))
+
+  (setopt modern-tab-line-icon-function #'my/tab-icon)
+#+end_src
 
 ** Development
 
