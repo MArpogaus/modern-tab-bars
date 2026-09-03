@@ -12,6 +12,10 @@
 
 EMACS   ?= emacs
 SANDBOX ?= .sandbox
+# The sandbox is done when the stamp is there: a run that dies half
+# way leaves the directory behind, and a directory target would then
+# count as made and the tools stay missing.
+STAMP   := $(SANDBOX)/.installed
 DEPS    ?= package-lint relint
 
 SRC  := $(filter-out %-autoloads.el %-pkg.el,$(wildcard *.el))
@@ -37,10 +41,11 @@ BATCH = $(EMACS) -Q --batch -L . -L test -L tools --eval '$(init)'
 
 all: compile checkdoc lint relint test
 
-$(SANDBOX):
+$(STAMP):
 	@$(EMACS) -Q --batch --eval '$(init)' --eval '$(bootstrap)'
+	@touch $@
 
-compile: $(SANDBOX)
+compile: $(STAMP)
 	@$(BATCH) --eval '(setq byte-compile-error-on-warn t)' \
 	  -f batch-byte-compile $(SRC) $(TEST)
 	@rm -f ./*.elc test/*.elc
@@ -53,13 +58,13 @@ checkdoc:
 
 # One package, three files: package-lint reads the headers of the main
 # file for all of them, as MELPA does.
-lint: $(SANDBOX)
+lint: $(STAMP)
 	@$(BATCH) --eval '(setq package-lint-main-file "modern-tab.el")' \
 	  -f package-lint-batch-and-exit $(SRC)
 
-relint: $(SANDBOX)
+relint: $(STAMP)
 	@$(BATCH) -l relint -f relint-batch $(SRC) $(TEST)
-test: $(SANDBOX)
+test: $(STAMP)
 	@$(BATCH) $(addprefix -l ,$(TEST)) -f ert-run-tests-batch-and-exit
 
 clean:
