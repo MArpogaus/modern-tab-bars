@@ -108,6 +108,14 @@ idea."
 
 ;;;; Glyphs, and what a frame can draw
 
+(defun modern-tab--private-use-p (char)
+  "Return non-nil where CHAR is in one of Unicode's private use areas.
+The three of them: the block in the basic plane, and the whole of
+planes 15 and 16."
+  (or (<= #xE000 char #xF8FF)
+      (<= #xF0000 char #xFFFFD)
+      (<= #x100000 char #x10FFFD)))
+
 (defun modern-tab--drawable-p (string)
   "Return non-nil where this frame draws the first character of STRING.
 The question is asked of STRING, so the face STRING carries is part of
@@ -126,7 +134,15 @@ draw as a box.  There is nothing better to ask it."
        (not (string-empty-p string))
        (if (display-graphic-p)
            (font-at 0 nil string)
-         (char-displayable-p (aref string 0)))))
+         ;; A terminal has no font to ask, and `char-displayable-p'
+         ;; answers for the coding system: a UTF-8 terminal says yes to
+         ;; every character it can encode, box or not.  So a glyph from
+         ;; a private use area is refused there — that is where a nerd
+         ;; font keeps its own, and no terminal font can be assumed to
+         ;; carry them.
+         (let ((c (aref string 0)))
+           (and (char-displayable-p c)
+                (not (modern-tab--private-use-p c)))))))
 
 (defun modern-tab-glyph (&rest candidates)
   "Return the first of CANDIDATES this frame can draw.
@@ -165,11 +181,19 @@ are named \"nf-<icon>\", with no style in the middle.  Inspired by
 nerd-icons-corfu."
   (let* ((style (plist-get spec :style))
          (icon (plist-get spec :icon))
-         (fun (intern (concat "nerd-icons-" style "icon")))
+         ;; `intern-soft': a style nobody defined is a typo, and
+         ;; interning it would leave it in the obarray for good.
+         (fun (intern-soft (concat "nerd-icons-" style "icon")))
          (name (if (equal style "suc")
                    (concat "nf-" icon)
                  (concat "nf-" style "-" icon))))
-    (modern-tab-glyph (and (fboundp fun) (funcall fun name)) "?")))
+    (modern-tab-glyph
+     ;; nerd-icons signals where the name is not one of its own, and
+     ;; this runs from redisplay: one wrong character in an option
+     ;; would otherwise break the whole row on every draw.
+     (and fun (fboundp fun)
+          (condition-case nil (funcall fun name) (error nil)))
+     "?")))
 
 (defun modern-tab-icon (spec)
   "Return SPEC as the string that shows on a tab.
@@ -197,12 +221,36 @@ out of every redisplay."
                              modern-tab--icons)
     (modern-tab-icon spec)))
 
+;;;; What a mode borrows and gives back
+
+(defvar modern-tab--borrowed nil
+  "What each mode found in the variables it sets, and gives back.
+An alist of (MODE . ((SYMBOL . VALUE) ...)).  `custom-reevaluate-setting'
+was here before and it is the wrong tool twice over: a plain `defvar'
+has no standard value, so it was set to nil — `tab-line-close-button'
+came back as nothing and the stock tab line lost its close button —
+and a value the reader had set with `setq' was thrown away for
+whatever the custom file said.")
+
+(defun modern-tab-borrow (mode &rest symbols)
+  "Keep what SYMBOLS hold, in the name of MODE, before it sets them."
+  (setf (alist-get mode modern-tab--borrowed)
+        (mapcar (lambda (symbol) (cons symbol (symbol-value symbol)))
+                symbols)))
+
+(defun modern-tab-give-back (mode)
+  "Put back what MODE borrowed, exactly as it was."
+  (dolist (cell (alist-get mode modern-tab--borrowed))
+    (set (car cell) (cdr cell)))
+  (setf (alist-get mode modern-tab--borrowed nil t) nil))
+
 ;;;; What a mode gives back when it is turned off
 
-(defun modern-tab-restore (&rest symbols)
-  "Give each of SYMBOLS the value its own customization says it has."
-  (dolist (symbol symbols)
-    (custom-reevaluate-setting symbol)))
+;; The icons of a frame depend on the font it has, so a font arriving is
+;; a reason to forget them.  On the hook of the file rather than of a
+;; mode: two modes read the same table, and either of them turning off
+;; used to take the hook away from the other.
+(add-hook 'after-setting-font-hook #'modern-tab-forget)
 
 (provide 'modern-tab)
 ;;; modern-tab.el ends here

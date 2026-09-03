@@ -14,6 +14,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'ert)
 (require 'modern-tab)
 (require 'modern-tab-bar)
@@ -173,20 +174,70 @@ which is what a width of zero asks for."
                    '((add-tab menu-item "+" ignore :help "New"))))))
 
 (ert-deftest modern-tab-bar-test-the-mode-gives-the-tab-bar-back ()
-  "Turning the mode off restores every variable it set."
-  (let ((was (list tab-bar-separator tab-bar-auto-width
-                   tab-bar-tab-name-format-function
-                   tab-bar-tab-group-format-function)))
-    (modern-tab-bar-mode 1)
-    (should (eq tab-bar-tab-name-format-function #'modern-tab-bar-name-format))
-    (should (equal tab-bar-separator ""))
-    (should (memq #'modern-tab-forget after-setting-font-hook))
-    (modern-tab-bar-mode -1)
-    (should (equal (list tab-bar-separator tab-bar-auto-width
-                         tab-bar-tab-name-format-function
-                         tab-bar-tab-group-format-function)
-                   was))
-    (should-not (memq #'modern-tab-forget after-setting-font-hook))))
+  "Turning the mode off gives back what the reader had, not what custom says.
+Every variable the mode sets, including the two buttons and the format:
+`custom-reevaluate-setting' was the restore before this, and it reads
+the custom file — so a value set with `setq' was thrown away and a
+plain `defvar' was set to nil."
+  (let ((tab-bar-separator " | ")
+        (tab-bar-auto-width nil)
+        (tab-bar-new-button "MINE-NEW")
+        (tab-bar-close-button "MINE-CLOSE")
+        (tab-bar-format '(tab-bar-format-tabs))
+        (tab-bar-tab-name-format-function #'ignore)
+        (tab-bar-tab-group-format-function #'ignore))
+    (let ((was (list tab-bar-separator tab-bar-auto-width
+                     tab-bar-new-button tab-bar-close-button
+                     tab-bar-format
+                     tab-bar-tab-name-format-function
+                     tab-bar-tab-group-format-function)))
+      (modern-tab-bar-mode 1)
+      (should (eq tab-bar-tab-name-format-function #'modern-tab-bar-name-format))
+      (should (equal tab-bar-separator ""))
+      (modern-tab-bar-mode -1)
+      (should (equal (list tab-bar-separator tab-bar-auto-width
+                           tab-bar-new-button tab-bar-close-button
+                           tab-bar-format
+                           tab-bar-tab-name-format-function
+                           tab-bar-tab-group-format-function)
+                     was)))))
+
+(ert-deftest modern-tab-bar-test-the-font-hook-belongs-to-the-file ()
+  "Forgetting the icons on a new font is not one mode's business.
+Both modes read the same table, and either of them turning off used to
+take the hook away from the other."
+  (should (memq #'modern-tab-forget after-setting-font-hook))
+  (modern-tab-bar-mode 1)
+  (modern-tab-bar-mode -1)
+  (should (memq #'modern-tab-forget after-setting-font-hook)))
+
+(ert-deftest modern-tab-bar-test-a-group-with-no-name-is-not-an-error ()
+  "`tab-bar-tab-group-format-function' can be called with a nil group.
+Stock Emacs does not, but the hook is public and a reader who replaces
+`tab-bar-format-tabs-groups' can."
+  (modern-tab-forget)
+  (should (stringp (modern-tab-bar--group-icon nil)))
+  (should (stringp (modern-tab-bar--group-icon ""))))
+
+(ert-deftest modern-tab-bar-test-a-tab-wears-the-face-the-tab-bar-chose ()
+  "The face comes from `tab-bar-tab-face-function', not from a name here.
+Naming `tab-bar-tab' drew every tab in the selected tab's colours, and
+`tab-bar-tab-inactive' never rendered at all."
+  (let* ((tab-bar-close-button-show nil)
+         (calls 0)
+         (tab-bar-tab-face-function
+          (lambda (_tab) (setq calls (1+ calls)) 'my-face)))
+    (should (equal (get-text-property
+                    0 'face (modern-tab-bar-name-format '(tab (name . "x")) 1))
+                   '(:inherit my-face :weight normal)))
+    (should (= calls 1))))
+
+(ert-deftest modern-tab-test-the-icon-table-tells-the-rows-apart ()
+  "A tab group and a buffer of the same name do not share an icon.
+One table serves both rows, so the key says which row asked."
+  (modern-tab-forget)
+  (should (equal (modern-tab-icon-for (cons 'group "same") "G") "G"))
+  (should (equal (modern-tab-icon-for (cons 'buffer "same") "B") "B")))
 
 ;;;; The tab line
 
@@ -233,20 +284,48 @@ which is what a width of zero asks for."
     (should-not (buffer-live-p buffer))))
 
 (ert-deftest modern-tab-line-test-the-mode-gives-the-tab-line-back ()
-  "Turning the mode off restores every variable it set, and the hooks."
-  (let ((was (list tab-line-separator tab-line-tab-name-function
-                   tab-line-close-tab-function tab-line-close-button-show)))
-    (modern-tab-line-mode 1)
-    (should (eq tab-line-tab-name-function #'modern-tab-line-tab-name))
-    (should (memq #'modern-tab-line-update-window buffer-list-update-hook))
-    (should global-tab-line-mode)
-    (modern-tab-line-mode -1)
-    (should (equal (list tab-line-separator tab-line-tab-name-function
-                         tab-line-close-tab-function
-                         tab-line-close-button-show)
-                   was))
-    (should-not (memq #'modern-tab-line-update-window buffer-list-update-hook))
-    (should-not global-tab-line-mode)))
+  "Turning the mode off gives back every variable it set, the button too.
+`tab-line-close-button' is a plain `defvar', so the restore that read
+the custom file set it to nil and left the stock tab line with no close
+button at all."
+  (let ((tab-line-separator " | ")
+        (tab-line-tab-name-function #'ignore)
+        (tab-line-close-tab-function #'ignore)
+        (tab-line-new-button-show t)
+        (tab-line-close-button-show t)
+        (tab-line-close-button "MINE"))
+    (let ((was (list tab-line-separator tab-line-tab-name-function
+                     tab-line-close-tab-function tab-line-new-button-show
+                     tab-line-close-button-show tab-line-close-button)))
+      (modern-tab-line-mode 1)
+      (should (eq tab-line-tab-name-function #'modern-tab-line-tab-name))
+      (should (memq #'modern-tab-line-update-window buffer-list-update-hook))
+      (should global-tab-line-mode)
+      (modern-tab-line-mode -1)
+      (should (equal (list tab-line-separator tab-line-tab-name-function
+                           tab-line-close-tab-function
+                           tab-line-new-button-show
+                           tab-line-close-button-show tab-line-close-button)
+                     was))
+      (should-not (memq #'modern-tab-line-update-window
+                        buffer-list-update-hook))
+      (should-not global-tab-line-mode))))
+
+(ert-deftest modern-tab-line-test-a-row-the-reader-had-stays ()
+  "A `global-tab-line-mode' that was on before the mode stays on after it."
+  (global-tab-line-mode 1)
+  (modern-tab-line-mode 1)
+  (modern-tab-line-mode -1)
+  (should global-tab-line-mode)
+  (global-tab-line-mode -1))
+
+(ert-deftest modern-tab-line-test-a-parameter-of-somebody-else-stays ()
+  "Only the rows this package hid come back when the mode goes."
+  (set-window-parameter nil 'tab-line-format 'mine)
+  (modern-tab-line-mode 1)
+  (modern-tab-line-mode -1)
+  (should (eq (window-parameter nil 'tab-line-format) 'mine))
+  (set-window-parameter nil 'tab-line-format nil))
 
 (ert-deftest modern-tab-line-test-hiding-can-be-turned-off ()
   "With `modern-tab-line-auto-hide' nil no window parameter is touched."

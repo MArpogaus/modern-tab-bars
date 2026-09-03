@@ -70,18 +70,27 @@ A colour name, or a face whose foreground is the colour."
 (defcustom modern-tab-line-icon-function #'modern-tab-line-file-icon
   "Function that returns the icon of a tab, called with its buffer.
 Nil shows no icon at all."
-  :type '(choice (const :tag "None" nil) function))
+  :type '(choice (const :tag "None" nil) function)
+  :set #'modern-tab-set-and-forget)
 
 (defcustom modern-tab-line-close-glyphs '("✕ " "x ")
   "Glyphs of the close button, best first.
 The first one the frame can draw wins, so keep a plain character last."
-  :type '(repeat string))
+  :type '(repeat string)
+  :set #'modern-tab-set-and-forget)
 
 (defcustom modern-tab-line-auto-hide t
   "Whether a window showing one buffer hides its tab line.
 A row of tabs with a single tab on it says nothing, and it costs a line
 of every window."
-  :type 'boolean)
+  :type 'boolean
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         ;; Off while the mode is on used to leave every row that was
+         ;; already hidden hidden for good.
+         (unless value
+           (when (fboundp 'modern-tab-line--show-everywhere)
+             (modern-tab-line--show-everywhere)))))
 
 ;;;; The parts of a tab
 
@@ -98,8 +107,10 @@ built again on every command."
   (when (fboundp 'nerd-icons-icon-for-file)
     (let ((name (buffer-name buffer)))
       (modern-tab-icon-for
-       name (lambda ()
-              (modern-tab-glyph (nerd-icons-icon-for-file name) ""))))))
+       ;; The key says which row asked: one table serves both.
+       (cons 'buffer name)
+       (lambda ()
+         (modern-tab-glyph (nerd-icons-icon-for-file name) ""))))))
 
 (defun modern-tab-line-tab-name (buffer &optional _buffers)
   "Return the name shown on the tab of BUFFER.
@@ -137,43 +148,73 @@ where none does."
         (last (not (modern-tab-line--several-p)))
         (buffer (modern-tab-line--buffer tab)))
     (if (length> (get-buffer-window-list buffer nil t) 1)
-        ;; The buffer of the tab, which is the selected one only while
-        ;; `tab-line-close-button-show' is `selected'.
-        (bury-buffer buffer)
+        ;; Out of this window's rows, the way `tab-line-close-tab' does
+        ;; it: the tabs come from the two buffer lists of the window,
+        ;; and `bury-buffer' of a buffer that is not current touches
+        ;; neither, so the tab stayed and the click did nothing.
+        (if (eq buffer (current-buffer))
+            (bury-buffer)
+          (set-window-prev-buffers
+           window (assq-delete-all buffer (window-prev-buffers window)))
+          (set-window-next-buffers
+           window (delq buffer (window-next-buffers window))))
       (kill-buffer buffer))
-    (when last
-      ;; The sole window of a frame cannot go.
+    ;; The window goes only where its tab really went, and never the
+    ;; sole window of a frame.
+    (when (and last (not (buffer-live-p buffer)))
       (ignore-errors (delete-window window)))))
 
 ;;;; Hiding a row that says nothing
 
 (defun modern-tab-line-update-window ()
-  "Show the tab line in the selected window only where it has tabs."
-  (when modern-tab-line-auto-hide
+  "Show the tab line in the selected window only where it has tabs.
+A window whose parameter says something else was set by somebody else,
+and it is left as it is: this hides rows, it does not take the row over."
+  (when (and modern-tab-line-auto-hide
+             (memq (window-parameter nil 'tab-line-format) '(nil none)))
     (set-window-parameter nil 'tab-line-format
                           (if (modern-tab-line--several-p) nil 'none))))
 
-(defun modern-tab-line-update-frame ()
-  "Ask every window of the selected frame whether to show its tab line."
+(defun modern-tab-line-update-frame (&rest _)
+  "Ask every window of every frame whether to show its tab line.
+Every frame, because a frame that is not the selected one keeps its
+rows until something changes its windows, and a row of one tab says
+nothing there either."
   (when modern-tab-line-auto-hide
-    (dolist (window (window-list))
-      (with-selected-window window
-        (modern-tab-line-update-window)))))
+    (dolist (frame (frame-list))
+      (dolist (window (window-list frame))
+        (with-selected-window window
+          (modern-tab-line-update-window))))))
 
 (defun modern-tab-line--show-everywhere ()
-  "Take the hiding off every window of every frame."
+  "Take the hiding off every window that this package hid.
+A window whose parameter says something else was set by somebody else,
+and it is left alone."
   (dolist (frame (frame-list))
     (dolist (window (window-list frame))
-      (set-window-parameter window 'tab-line-format nil))))
+      (when (eq (window-parameter window 'tab-line-format) 'none)
+        (set-window-parameter window 'tab-line-format nil)))))
 
 ;;;; The mode
 
+(defvar modern-tab-line--had-the-row nil
+  "Whether `global-tab-line-mode' was on before this mode turned it on.
+It stays on where it was on: a reader who had the row does not lose it
+because this mode was turned off.")
+
 (defun modern-tab-line--setup ()
   "Give the tab line the modern look."
-  (add-hook 'after-setting-font-hook #'modern-tab-forget)
   (add-hook 'buffer-list-update-hook #'modern-tab-line-update-window)
   (add-hook 'window-state-change-hook #'modern-tab-line-update-frame)
-  (setq tab-line-tab-name-function #'modern-tab-line-tab-name
+  (modern-tab-borrow 'modern-tab-line-mode
+                     'tab-line-tab-name-function
+                     'tab-line-close-tab-function
+                     'tab-line-separator
+                     'tab-line-new-button-show
+                     'tab-line-close-button-show
+                     'tab-line-close-button)
+  (setq modern-tab-line--had-the-row global-tab-line-mode
+        tab-line-tab-name-function #'modern-tab-line-tab-name
         tab-line-close-tab-function #'modern-tab-line-close-tab
         tab-line-separator ""
         tab-line-new-button-show nil
@@ -187,18 +228,13 @@ where none does."
   (modern-tab-line-update-frame))
 
 (defun modern-tab-line--teardown ()
-  "Give the tab line its stock look back."
-  (remove-hook 'after-setting-font-hook #'modern-tab-forget)
+  "Give the tab line back what it had before the mode."
   (remove-hook 'buffer-list-update-hook #'modern-tab-line-update-window)
   (remove-hook 'window-state-change-hook #'modern-tab-line-update-frame)
   (modern-tab-line--show-everywhere)
-  (modern-tab-restore 'tab-line-tab-name-function
-                      'tab-line-close-tab-function
-                      'tab-line-separator
-                      'tab-line-new-button-show
-                      'tab-line-close-button-show
-                      'tab-line-close-button)
-                      (global-tab-line-mode -1))
+  (modern-tab-give-back 'modern-tab-line-mode)
+  (unless modern-tab-line--had-the-row
+    (global-tab-line-mode -1)))
 
 ;;;###autoload
 (define-minor-mode modern-tab-line-mode
