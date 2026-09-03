@@ -9,118 +9,144 @@
 [[https://github.com/MArpogaus/modern-tab-bars/actions/workflows/test.yml][https://img.shields.io/github/actions/workflow/status/MArpogaus/modern-tab-bars/test.yml.svg?branch=main&label=tests&style=flat-square]]
 [[https://linkedin.com/in/MArpogaus][https://img.shields.io/badge/-LinkedIn-black.svg?style=flat-square&logo=linkedin&colorB=555]]
 
-* Emacs Package Template :TOC_3_gh:noexport:
+* Modern Tabbars :TOC_3_gh:noexport:
   - [[#about-the-project][About The Project]]
   - [[#getting-started][Getting Started]]
-    - [[#use-the-template][Use the Template]]
-    - [[#file-structure][File Structure]]
+    - [[#installation][Installation]]
+    - [[#usage][Usage]]
+  - [[#customization][Customization]]
+    - [[#the-indicator][The Indicator]]
+    - [[#the-tab-bar][The Tab Bar]]
+    - [[#the-tab-line][The Tab Line]]
   - [[#development][Development]]
-    - [[#make-targets][Make Targets]]
-    - [[#conventions][Conventions]]
-  - [[#publishing-on-melpa][Publishing on MELPA]]
   - [[#contributions][Contributions]]
   - [[#license][License]]
   - [[#contact][Contact]]
 
 ** About The Project
 
-A starting point for an Emacs Lisp package that is ready for MELPA on
-day one: the file headers, the checks and the CI workflow are already
-in place, so the first commit is about the feature and not about
-scaffolding.
+Emacs has two rows of tabs.  The =tab-bar= shows one tab per tab or tab
+group; the =tab-line= shows one tab per buffer of a window.  This
+package gives both the look of the editors people come here from: a
+coloured indicator beside the selected tab, an icon on every tab, and a
+close button that closes what you expect.
 
-Everything here is checked by the same pipeline the other packages use.
-Running =make= byte-compiles with warnings as errors, runs =checkdoc=
-and =package-lint=, and runs the test suite.
+[[file:img/screenshot-light.png]]
+
+[[file:img/screenshot-dark.png]]
+
+The two modes are independent, they take the same kinds of
+customization, and every option of one has a twin in the other.  Icons
+come from [[https://github.com/rainstormstudio/nerd-icons.el][nerd-icons]] where it is installed and the frame has the font.
+Where it is not, every glyph falls back to a plain character, so a
+terminal shows the same tabs in ASCII.
 
 ** Getting Started
 
-*** Use the Template
+*** Installation
 
-Create a repository from this template on GitHub, then rename the
-placeholder to the package name.  The name appears in the file names,
-in the symbol prefix and in the URLs:
+The package is one Emacs and nothing else.  With =use-package= and a
+package manager that installs from a repository:
 
-#+begin_src shell
-  name=your-package
-  git mv modern-tab.el "$name.el"
-  git mv test/modern-tab-test.el "test/$name-test.el"
-  grep -rl modern-tab . --exclude-dir=.git | xargs sed -i "s/modern-tab/$name/g"
-  grep -rl modern-tab-bars . --exclude-dir=.git | \
-      xargs sed -i "s/modern-tab-bars/$name/g"
-  make
+#+begin_src emacs-lisp
+  (use-package modern-tab-bar
+    :vc (:url "https://github.com/MArpogaus/modern-tab-bars")
+    :hook (after-init . modern-tab-bar-mode))
+
+  (use-package modern-tab-line
+    :vc (:url "https://github.com/MArpogaus/modern-tab-bars")
+    :hook (after-init . modern-tab-line-mode))
 #+end_src
 
-Then write the feature, adjust =Package-Requires= to the oldest Emacs
-release you support, and list that release first in the CI matrix.
+*** Usage
 
-*** File Structure
+=M-x modern-tab-bar-mode= dresses the tab bar.  Turn on =tab-bar-mode=
+to see it.
 
-#+begin_example
-  .dir-locals.el              indentation and fill column for contributors
-  .elpaignore                 files MELPA leaves out of the package
-  .github/workflows/test.yml  CI, one job per supported Emacs version
-  .gitignore
-  COPYING                     GPLv3
-  Makefile                    compile, checkdoc, lint, test
-  README.org
-  modern-tab.el               the package
-  test/modern-tab-test.el     ERT suite
-#+end_example
+=M-x modern-tab-line-mode= dresses the tab line, and turns
+=global-tab-line-mode= on with it.  A window showing one buffer hides
+its tab line: a row with a single tab on it says nothing and costs a
+line of every window.  Set =modern-tab-line-auto-hide= to nil to keep
+the row.
+
+Turning either mode off gives the stock look back, including the
+buttons.
+
+** Customization
+
+*** The Indicator
+
+The indicator is the vertical bar beside a tab.  Both modes take the
+same two options for it, and both read them the same way: the car
+belongs to the selected tab, the cdr to the others.
+
+| Option                             | Default                        |
+|------------------------------------+--------------------------------|
+| =modern-tab-bar-indicator-width=   | ~(4 . 2)~, in pixels           |
+| =modern-tab-bar-indicator-color=   | ~(mode-line-emphasis . shadow)~ |
+| =modern-tab-bar-indicator-height=  | ~25~, in pixels                |
+| =modern-tab-line-indicator-width=  | ~(3 . 0)~, in pixels           |
+| =modern-tab-line-indicator-color=  | ~(mode-line-emphasis . shadow)~ |
+| =modern-tab-line-indicator-height= | ~20~, in pixels                |
+
+A width of nil or zero draws no indicator at all.  A colour is a colour
+name or a face, whose foreground is then the colour.  A terminal has no
+images and draws one column of a vertical line instead.
+
+*** The Tab Bar
+
+| Option                             | What it says                                  |
+|------------------------------------+-----------------------------------------------|
+| =modern-tab-bar-icons=             | the icon each group name shows, an alist       |
+| =modern-tab-bar-default-icon=      | the icon a group with no match shows           |
+| =modern-tab-bar-group-name-function= | rewrites the name of a group                 |
+| =modern-tab-bar-new-command=       | what the new button runs                       |
+| =modern-tab-bar-new-icon=          | how the new button is drawn                    |
+| =modern-tab-bar-close-icon=        | how the close button is drawn                  |
+| =modern-tab-bar-current-glyphs=    | the mark on the selected tab, best first       |
+| =modern-tab-bar-format=            | what the bar shows, as =tab-bar-format= takes it |
+
+An icon is a string shown as it is, or a plist naming a nerd-icons
+glyph:
+
+#+begin_src emacs-lisp
+  (setopt modern-tab-bar-icons
+          '(("HOME"      :style "suc" :icon "custom-emacs")
+            ("^\\[P\\]"  :style "oct" :icon "repo")
+            ("config"    :style "md"  :icon "cog")))
+#+end_src
+
+The first pattern that matches the group name wins, and the patterns
+are matched with the case rules of whoever wrote them.
+
+*** The Tab Line
+
+| Option                           | What it says                             |
+|----------------------------------+------------------------------------------|
+| =modern-tab-line-icon-function=  | the icon of a tab, called with its buffer |
+| =modern-tab-line-close-glyphs=   | the close button, best first              |
+| =modern-tab-line-auto-hide=      | whether a window with one buffer hides the row |
+
+The close button closes what an editor would: the buffer is buried
+where another window still shows it, killed where none does, and the
+window goes with its last tab.
 
 ** Development
 
-*** Make Targets
+| Target        | What it does                             |
+|---------------+------------------------------------------|
+| =compile=     | byte-compile, warnings are errors        |
+| =checkdoc=    | documentation style, any output fails    |
+| =lint=        | package-lint, the rules MELPA applies    |
+| =relint=      | the regular expressions                  |
+| =test=        | ERT suite                                |
+| =complexity=  | what each function costs a reader        |
+| =clean=       | remove build output and the tool sandbox |
 
-| Target     | What it does                                    |
-|------------+-------------------------------------------------|
-| =compile=  | byte-compile, warnings are errors               |
-| =checkdoc= | documentation style, any output fails           |
-| =lint=     | package-lint, the rules MELPA applies           |
-| =test=     | ERT suite                                       |
-| =clean=    | remove build output and the tool sandbox        |
-
-Plain =make= runs all checks in that order, exactly as the CI does.
-The =lint= target installs package-lint into =.sandbox/=, so a fresh
-checkout needs nothing but Emacs and =make=.
-
-*** Conventions
-
-- One package prefix for every symbol; private ones use a double dash.
-- Every file carries the header block, =;;; Commentary:=, =;;; Code:=,
-  a =provide= form and the footer comment.
-- Autoload cookies on the entry points only: commands, minor modes and
-  variables a user sets before the package is loaded.
-- Docstrings end sentences with two spaces, name their arguments in
-  upper case and quote symbols as =`symbol'=.
-- Commits follow the conventional commit style; work happens on =dev=
-  and reaches =main= as a merge commit, which is then tagged.
-- Code written with an AI assistant carries an =Assisted-by:= line under
-  the =Author:= line, which is what MELPA asks for:
-  =;; Assisted-by: Claude:claude-opus-5=.
-
-** Publishing on MELPA
-
-1. Tag a release, so MELPA Stable has something to build.
-2. Fork [[https://github.com/melpa/melpa][melpa/melpa]] and add =recipes/<package>=:
-
-   #+begin_src emacs-lisp
-     (modern-tab
-      :fetcher github
-      :repo "MArpogaus/modern-tab")
-   #+end_src
-
-   Add =:branch "main"= when the default branch is not the one to
-   package.  The =.elpaignore= file keeps the tests and the CI files
-   out; a =:files= specification is not needed.
-3. Check the recipe locally in the melpa checkout:
-
-   #+begin_src shell
-     make recipes/modern-tab
-     make sandbox INSTALL=modern-tab
-   #+end_src
-4. Open the pull request.  The checklist in the template asks for the
-   package to be lint-clean, which =make lint= already answers.
+Plain =make= runs the checks in that order, exactly as the CI does.
+=make complexity= is a report rather than a gate; see
+[[file:docs/implementation.org][docs/implementation.org]] for what it counts and for how the two modes are
+built.
 
 ** Contributions
 
