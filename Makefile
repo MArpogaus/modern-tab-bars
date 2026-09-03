@@ -4,6 +4,8 @@
 #   make checkdoc  documentation style
 #   make lint      package-lint, the MELPA rules
 #   make test      ERT test suite
+#   make relint    the regular expressions
+#   make complexity  what each function costs a reader
 #   make clean     remove build output and the tool sandbox
 #
 # The checks install their tools and this package's dependencies into
@@ -11,7 +13,7 @@
 
 EMACS   ?= emacs
 SANDBOX ?= .sandbox
-DEPS    ?= package-lint
+DEPS    ?= package-lint relint
 
 SRC  := $(filter-out %-autoloads.el %-pkg.el,$(wildcard *.el))
 TEST := $(wildcard test/*.el)
@@ -30,11 +32,11 @@ checkdoc = (progn (require (quote checkdoc)) \
                   (setq checkdoc-verb-check-experimental-flag nil) \
                   (dolist (f command-line-args-left) (checkdoc-file f)))
 
-BATCH = $(EMACS) -Q --batch -L . -L test --eval '$(init)'
+BATCH = $(EMACS) -Q --batch -L . -L test -L tools --eval '$(init)'
 
-.PHONY: all compile checkdoc lint test clean
+.PHONY: all compile checkdoc lint relint test complexity clean
 
-all: compile checkdoc lint test
+all: compile checkdoc lint relint test
 
 $(SANDBOX):
 	@$(EMACS) -Q --batch --eval '$(init)' --eval '$(bootstrap)'
@@ -50,8 +52,20 @@ checkdoc:
 	@out=$$($(BATCH) --eval '$(checkdoc)' $(SRC) 2>&1); \
 	  if [ -n "$$out" ]; then printf '%s\n' "$$out"; exit 1; fi
 
+# One package, three files: package-lint reads the headers of the main
+# file for all of them, as MELPA does.
 lint: $(SANDBOX)
-	@$(BATCH) -f package-lint-batch-and-exit $(SRC)
+	@$(BATCH) --eval '(setq package-lint-main-file "modern-tab.el")' \
+	  -f package-lint-batch-and-exit $(SRC)
+
+relint: $(SANDBOX)
+	@$(BATCH) -l relint -f relint-batch $(SRC) $(TEST)
+
+# A report and not a gate: there is no complexity rule to fail, only
+# functions worth looking at.  See tools/complexity.el.
+complexity:
+	@$(BATCH) -l complexity \
+	  --eval '(complexity-report command-line-args-left)' $(SRC)
 
 test: $(SANDBOX)
 	@$(BATCH) $(addprefix -l ,$(TEST)) -f ert-run-tests-batch-and-exit
