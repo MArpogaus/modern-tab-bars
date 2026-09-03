@@ -51,9 +51,9 @@
   "Each state has its own width and its own colour.
 The selected tab of the tab line takes a bar; the others take none,
 which is what a width of zero asks for.  The bar comes from
-`modern-tab-line-tab-format\\=', which puts it in front of the name the
+`modern-tab-line-tab-format', which puts it in front of the name the
 row formats: the face of a terminal bar would not survive the
-`propertize\\=' that formatting does."
+`propertize' that formatting does."
   (skip-unless (not (display-graphic-p)))
   (let ((modern-tab-line-active-indicator-width 3)
         (modern-tab-line-inactive-indicator-width 0)
