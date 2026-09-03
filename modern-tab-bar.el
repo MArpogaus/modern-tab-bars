@@ -26,13 +26,12 @@
 
 ;; `modern-tab-bar-mode' gives the tab bar a bar beside the selected tab
 ;; group, an icon for each group, and a new button and a close button
-;; drawn with `define-icon', so a terminal gets their text form.  Every
-;; part of the look is an option; the indicator options match those of
+;; whose glyphs are the best ones the frame can draw.  Every part of the
+;; look is an option; the indicator options match those of
 ;; `modern-tab-line-mode' name for name.
 
 ;;; Code:
 
-(require 'icons)
 (require 'tab-bar)
 (require 'modern-tab)
 
@@ -96,14 +95,19 @@ goes onto the tab bar.  Nil shows the name as it is."
   "Command the new button of the tab bar runs."
   :type 'function)
 
-(defcustom modern-tab-bar-new-icon '((symbol "  ") (text " + "))
-  "How the new button is drawn, as `define-icon' takes it."
-  :type '(repeat sexp)
+(defcustom modern-tab-bar-new-glyphs '("  " " + ")
+  "Glyphs of the button that makes a tab, best first.
+The first one the frame can draw wins, so keep a plain string last.
+`define-icon' was here before, and it asks `char-displayable-p', which
+a UTF-8 terminal answers with yes for any character it can encode: the
+button was a hex box there rather than the plain text."
+  :type '(repeat string)
   :set #'modern-tab-set-and-forget)
 
-(defcustom modern-tab-bar-close-icon '((symbol " ✕ ") (text " x "))
-  "How the close button is drawn, as `define-icon' takes it."
-  :type '(repeat sexp)
+(defcustom modern-tab-bar-close-glyphs '(" ✕ " " x ")
+  "Glyphs of the button that closes a tab, best first.
+The first one the frame can draw wins, so keep a plain string last."
+  :type '(repeat string)
   :set #'modern-tab-set-and-forget)
 
 (defcustom modern-tab-bar-current-glyphs '("󰅂 " "› " "  ")
@@ -121,17 +125,40 @@ columns wide, which is what the glyphs before them are."
     tab-bar-format-align-right
     tab-bar-format-global
     modern-tab-bar--thin-spacer
-    tab-bar-format-menu-bar
+    modern-tab-bar--menu-bar
     modern-tab-bar--wide-spacer)
   "What the tab bar shows, as `tab-bar-format' takes it."
   :type 'hook)
 
 ;;;; The parts of the bar
 
+(defun modern-tab-bar-new-button ()
+  "Return the string of the new button, drawn for this display.
+Per redisplay and not once at enable: `modern-tab-icon-for' keeps the
+answer per display, so a daemon serving a graphic frame and a terminal
+frame gives each the glyph it can draw, and a reader who customizes
+`modern-tab-bar-new-glyphs' sees the new one at the next redisplay."
+  (modern-tab-icon-for 'new-button
+                       (lambda ()
+                         (apply #'modern-tab-glyph
+                                modern-tab-bar-new-glyphs))))
+
+(defun modern-tab-bar-close-button ()
+  "Return the string of the close button, drawn for this display.
+The `close-tab' property is what the tab bar dispatches a click on it
+on.  See `modern-tab-bar-new-button' for why it is not settled once."
+  (propertize (modern-tab-icon-for 'close-button
+                                   (lambda ()
+                                     (apply #'modern-tab-glyph
+                                            modern-tab-bar-close-glyphs)))
+              'close-tab t
+              'help-echo "Click to close tab"))
+
 (defun modern-tab-bar-format-new-button ()
   "Return the tab bar button that runs `modern-tab-bar-new-command'.
 A `tab-bar-format' can name this function."
-  `((add-tab menu-item ,tab-bar-new-button ,modern-tab-bar-new-command
+  `((add-tab menu-item ,(modern-tab-bar-new-button)
+             ,modern-tab-bar-new-command
              :help "New")))
 
 (defun modern-tab-bar--spacer (width)
@@ -140,10 +167,9 @@ WIDTH is a factor of the normal width of a space, as in the
 `space-width' display property.  A terminal draws no part of a cell,
 and one `space-width' item in the format leaves the whole row of the
 bar unpainted there: the row then still shows what stood in it before.
-A plain space says the same thing in a terminal."
-  (if (display-graphic-p)
-      (propertize " " 'display `(space-width ,width))
-    " "))
+A terminal gets no menu button either, which is what these spaces pad."
+  (when (display-graphic-p)
+    (propertize " " 'display `(space-width ,width))))
 
 (defun modern-tab-bar--thin-spacer ()
   "Return a thin space for `modern-tab-bar-format'."
@@ -153,17 +179,20 @@ A plain space says the same thing in a terminal."
   "Return a wide space for `modern-tab-bar-format'."
   (modern-tab-bar--spacer 0.75))
 
-(defun modern-tab-bar--format ()
-  "Return `modern-tab-bar-format' for this display.
+(defun modern-tab-bar--menu-bar ()
+  "Return the menu button of the tab bar, and nothing in a terminal.
 A terminal paints the row of the bar in the redisplay that turns the
-bar on.  With the menu button in the format, a tab that changes before
+bar on.  With the menu button in the row, a tab that changes before
 that redisplay leaves the row blank for the rest of the session, and
 neither `force-mode-line-update' nor `redraw-display' brings it back.
 Measured with Emacs 30.2, in tmux 3.7 and under pyte.  A terminal
-reaches the menu with \\[menu-bar-open] in any case."
-  (if (display-graphic-p)
-      modern-tab-bar-format
-    (remq 'tab-bar-format-menu-bar modern-tab-bar-format)))
+reaches the menu with \\[menu-bar-open] in any case.
+
+The question is asked per redisplay and not once at enable, so a
+daemon that serves a graphic frame and a terminal frame answers it for
+each of them."
+  (when (display-graphic-p)
+    (tab-bar-format-menu-bar)))
 
 (defun modern-tab-bar--group-icon (name)
   "Return the icon for the tab group NAME.
@@ -209,7 +238,11 @@ This is what `tab-bar-tab-name-format-function' is set to."
   (let ((selected (eq (car tab) 'current-tab)))
     (propertize
      (concat (if selected
-                 (apply #'modern-tab-glyph modern-tab-bar-current-glyphs)
+                 (modern-tab-icon-for
+                  'current-glyph
+                  (lambda ()
+                    (apply #'modern-tab-glyph
+                           modern-tab-bar-current-glyphs)))
                " ")
              (if tab-bar-tab-hints (format "%d " index) "")
              (alist-get 'name tab)
@@ -218,7 +251,7 @@ This is what `tab-bar-tab-name-format-function' is set to."
              ;; for `non-selected', which is the other way round.
              (if (memq tab-bar-close-button-show
                        (if selected '(t selected) '(t non-selected)))
-                 tab-bar-close-button " "))
+                 (modern-tab-bar-close-button) " "))
      ;; The face the tab bar itself would use, which is where
      ;; `tab-bar-tab-inactive', `tab-bar-tab-ungrouped' and a reader's
      ;; own `tab-bar-tab-face-function' live.  Naming `tab-bar-tab'
@@ -231,27 +264,16 @@ This is what `tab-bar-tab-name-format-function' is set to."
 
 (defun modern-tab-bar--setup ()
   "Give the tab bar the modern look."
-  ;; Every time, not once a session: an icon defined behind `iconp'
-  ;; kept the value the option had at the first enable, so customizing
-  ;; either icon appeared to do nothing until Emacs restarted.
-  (define-icon modern-tab-bar--new nil modern-tab-bar-new-icon
-    "Icon of the button that makes a new tab."
-    :version "29.1"
-    :help-echo "New tab")
-  (define-icon modern-tab-bar--close nil modern-tab-bar-close-icon
-    "Icon of the button that closes the tab it stands on."
-    :version "29.1"
-    :help-echo "Click to close tab")
+  ;; The buttons and the menu entry are drawn per redisplay, by
+  ;; `modern-tab-bar-new-button', `modern-tab-bar-close-button' and
+  ;; `modern-tab-bar--menu-bar': settled here they would be settled for
+  ;; one display, and for the glyphs the options held at the enable.
   (modern-tab-borrow 'modern-tab-bar-mode
-                     'tab-bar-new-button 'tab-bar-close-button
                      'tab-bar-format 'tab-bar-separator
                      'tab-bar-auto-width
                      'tab-bar-tab-group-format-function
                      'tab-bar-tab-name-format-function)
-  (setq tab-bar-new-button (icon-string 'modern-tab-bar--new)
-        tab-bar-close-button (propertize (icon-string 'modern-tab-bar--close)
-                                         'close-tab t)
-        tab-bar-format (modern-tab-bar--format)
+  (setq tab-bar-format modern-tab-bar-format
         tab-bar-separator ""
         tab-bar-auto-width nil
         tab-bar-tab-group-format-function #'modern-tab-bar-group-format

@@ -143,16 +143,20 @@ row formats: the face of a terminal bar would not survive the
 
 (ert-deftest modern-tab-bar-test-the-close-button-reads-four-values ()
   "`tab-bar-close-button-show' says which tabs carry the button."
-  (let ((tab-bar-close-button "X")
+  (let ((modern-tab-bar-close-glyphs '("X"))
         (tab-bar-tab-hints nil)
         ;; A tab is an alist whose car says which kind it is.
         (tab '(current-tab (name . "one"))))
+    (modern-tab-forget)
     (let ((tab-bar-close-button-show 'selected))
-      (should (string-suffix-p "X" (modern-tab-bar-name-format tab 1))))
+      (should (string-suffix-p "X" (substring-no-properties
+                                    (modern-tab-bar-name-format tab 1)))))
     (let ((tab-bar-close-button-show 'non-selected))
-      (should-not (string-suffix-p "X" (modern-tab-bar-name-format tab 1))))
+      (should-not (string-suffix-p "X" (substring-no-properties
+                                       (modern-tab-bar-name-format tab 1)))))
     (let ((tab-bar-close-button-show nil))
-      (should-not (string-suffix-p "X" (modern-tab-bar-name-format tab 1))))))
+      (should-not (string-suffix-p "X" (substring-no-properties
+                                        (modern-tab-bar-name-format tab 1)))))))
 
 (ert-deftest modern-tab-bar-test-hints-show-the-number ()
   "A tab shows its index where `tab-bar-tab-hints' asks for it."
@@ -165,25 +169,32 @@ row formats: the face of a terminal bar would not survive the
       (should-not (string-match-p "3 one"
                                   (modern-tab-bar-name-format tab 3))))))
 
-(ert-deftest modern-tab-bar-test-the-format-drops-the-menu-in-a-terminal ()
-  "The menu button leaves a terminal's tab bar row blank, so it goes."
+(ert-deftest modern-tab-bar-test-the-menu-button-stays-out-of-a-terminal ()
+  "The menu button leaves a terminal's tab bar row blank, so it draws none.
+Asked per redisplay, so a daemon answers it for each of its frames: the
+entry stays in the format and answers nothing where it must."
   (skip-unless (not (display-graphic-p)))
-  (should-not (memq 'tab-bar-format-menu-bar (modern-tab-bar--format)))
-  (should (memq 'tab-bar-format-tabs-groups (modern-tab-bar--format))))
+  (should (memq 'modern-tab-bar--menu-bar modern-tab-bar-format))
+  (should-not (modern-tab-bar--menu-bar))
+  ;; and the spaces that pad it are gone with it
+  (should-not (modern-tab-bar--thin-spacer))
+  (should-not (modern-tab-bar--wide-spacer)))
 
 (ert-deftest modern-tab-bar-test-the-new-button-runs-the-command-it-is-given ()
   "`modern-tab-bar-new-command' is what the button of the format runs."
   (let ((modern-tab-bar-new-command #'ignore)
-        (tab-bar-new-button "+"))
+        (modern-tab-bar-new-glyphs '("+")))
+    (modern-tab-forget)
     (should (equal (modern-tab-bar-format-new-button)
                    '((add-tab menu-item "+" ignore :help "New"))))))
 
 (ert-deftest modern-tab-bar-test-the-mode-gives-the-tab-bar-back ()
   "Turning the mode off gives back what the reader had, not what custom says.
-Every variable the mode sets, including the two buttons and the format:
+Every variable the mode sets, the format included:
 `custom-reevaluate-setting' was the restore before this, and it reads
 the custom file — so a value set with `setq' was thrown away and a
-plain `defvar' was set to nil."
+plain `defvar' was set to nil.  The two buttons are drawn per redisplay
+and no variable of the tab bar holds them."
   (let ((tab-bar-separator " | ")
         (tab-bar-auto-width nil)
         (tab-bar-new-button "MINE-NEW")
@@ -199,6 +210,9 @@ plain `defvar' was set to nil."
       (modern-tab-bar-mode 1)
       (should (eq tab-bar-tab-name-format-function #'modern-tab-bar-name-format))
       (should (equal tab-bar-separator ""))
+      ;; the buttons of the tab bar are not this mode's to set
+      (should (equal tab-bar-new-button "MINE-NEW"))
+      (should (equal tab-bar-close-button "MINE-CLOSE"))
       (modern-tab-bar-mode -1)
       (should (equal (list tab-bar-separator tab-bar-auto-width
                            tab-bar-new-button tab-bar-close-button
