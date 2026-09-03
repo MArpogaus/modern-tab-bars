@@ -117,22 +117,32 @@ planes 15 and 16."
       (<= #x100000 char #x10FFFD)))
 
 (defun modern-tab--own-font-p (string)
-  "Whether the font drawing STRING is the one its own face asks for.
-A character its face's font does not carry is drawn by a fallback the
+  "Whether the font drawing STRING is the one the row's own text uses.
+A character the face's font does not carry is drawn by a fallback the
 fontset finds, in another family: `✕' has no glyph in most programming
 fonts, so the close button came out in whatever font the frame keeps
 for symbols — another weight, another width, another baseline than the
-row it sits in.  Such a glyph counts as one this frame cannot draw, so
+row it sits in.  Such a glyph counts as one this frame cannot draw, and
 the plain candidate after it wins.
 
+The same question is asked of a plain `x' carrying STRING's own face,
+in the same buffer and on the same frame, and the two answers are
+compared.  Asking the face for its `:family' instead was wrong in every
+buffer that remaps a face — a theme, `variable-pitch', a package that
+remaps `default' — because the family a face names and the family it is
+drawn in are then two different things: measured, the close button was
+right in a file buffer and wrong in `*scratch*'.
+
 Both families have to be known for the answer to be no: a font whose
-family cannot be read, or a face that names none, is left as it was."
+family cannot be read leaves the glyph as it was."
   (when-let* ((font (font-at 0 nil string))
+              (plain (font-at 0 nil (propertize
+                                     "x" 'face
+                                     (or (get-text-property 0 'face string)
+                                         'default))))
               (drawn (font-get font :family))
-              (face (or (get-text-property 0 'face string) 'default))
-              (wanted (face-attribute face :family nil 'default))
-              ((stringp wanted)))
-    (string-equal-ignore-case (format "%s" drawn) wanted)))
+              (wanted (font-get plain :family)))
+    (string-equal-ignore-case (format "%s" drawn) (format "%s" wanted))))
 
 (defun modern-tab--drawable-p (string)
   "Return non-nil where this frame draws the first character of STRING.
