@@ -136,7 +136,18 @@ spaces, as wide as the glyphs before them."
     modern-tab-bar--menu-bar
     modern-tab-bar--wide-spacer)
   "What the tab bar shows, as `tab-bar-format' takes it."
-  :type 'hook)
+  :type 'hook
+  ;; The value is copied into `tab-bar-format' when the mode starts,
+  ;; so a reader who sets this option while the mode is on is handed
+  ;; the new value here as well.  Every other option of this package
+  ;; reaches the row at the next redisplay, and this one has to say so
+  ;; too.  What the mode borrowed is untouched, so turning the mode off
+  ;; still gives the reader their own format back.
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (when (bound-and-true-p modern-tab-bar-mode)
+           (setq tab-bar-format value)
+           (force-mode-line-update t))))
 
 ;;;; The parts of the bar
 

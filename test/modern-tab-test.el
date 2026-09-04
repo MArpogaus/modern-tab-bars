@@ -282,6 +282,25 @@ entry stays in the format and answers nothing where it must."
     (should (equal (modern-tab-bar-format-new-button)
                    '((add-tab menu-item "+" ignore :help "New"))))))
 
+(ert-deftest modern-tab-bar-test-the-format-reaches-the-row-at-once ()
+  "Setting the format while the mode is on reaches the tab bar.
+The option is copied into `tab-bar-format' when the mode starts, so
+without a `:set' function a reader who set it saw nothing until the
+mode had been turned off and on again.  What the mode borrowed is left
+alone, so the reader still gets their own format back."
+  (let ((was modern-tab-bar-format)
+        (tab-bar-format '(a-format-of-the-readers)))
+    (unwind-protect
+        (progn
+          (modern-tab-bar-mode 1)
+          (should (equal tab-bar-format modern-tab-bar-format))
+          (customize-set-variable 'modern-tab-bar-format
+                                  '(tab-bar-format-tabs))
+          (should (equal tab-bar-format '(tab-bar-format-tabs))))
+      (customize-set-variable 'modern-tab-bar-format was)
+      (modern-tab-bar-mode -1))
+    (should (equal tab-bar-format '(a-format-of-the-readers)))))
+
 (ert-deftest modern-tab-bar-test-the-mode-gives-the-tab-bar-back ()
   "Turning the mode off gives back what the reader had, not what custom says.
 Every variable the mode sets, the format included:
