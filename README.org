@@ -1,131 +1,230 @@
 # Inspired by: https://github.com/othneildrew/Best-README-Template
 #+OPTIONS: toc:nil
 
-[[https://github.com/MArpogaus/modern-tab-bars/graphs/contributors][https://img.shields.io/github/contributors/MArpogaus/modern-tab-bars.svg?style=flat-square]]
-[[https://github.com/MArpogaus/modern-tab-bars/network/members][https://img.shields.io/github/forks/MArpogaus/modern-tab-bars.svg?style=flat-square]]
-[[https://github.com/MArpogaus/modern-tab-bars/stargazers][https://img.shields.io/github/stars/MArpogaus/modern-tab-bars.svg?style=flat-square]]
-[[https://github.com/MArpogaus/modern-tab-bars/issues][https://img.shields.io/github/issues/MArpogaus/modern-tab-bars.svg?style=flat-square]]
-[[https://github.com/MArpogaus/modern-tab-bars/blob/main/COPYING][https://img.shields.io/github/license/MArpogaus/modern-tab-bars.svg?style=flat-square]]
-[[https://github.com/MArpogaus/modern-tab-bars/actions/workflows/test.yml][https://img.shields.io/github/actions/workflow/status/MArpogaus/modern-tab-bars/test.yml.svg?branch=main&label=tests&style=flat-square]]
+[[https://github.com/MArpogaus/modern-tabs/graphs/contributors][https://img.shields.io/github/contributors/MArpogaus/modern-tabs.svg?style=flat-square]]
+[[https://github.com/MArpogaus/modern-tabs/network/members][https://img.shields.io/github/forks/MArpogaus/modern-tabs.svg?style=flat-square]]
+[[https://github.com/MArpogaus/modern-tabs/stargazers][https://img.shields.io/github/stars/MArpogaus/modern-tabs.svg?style=flat-square]]
+[[https://github.com/MArpogaus/modern-tabs/issues][https://img.shields.io/github/issues/MArpogaus/modern-tabs.svg?style=flat-square]]
+[[https://github.com/MArpogaus/modern-tabs/blob/main/COPYING][https://img.shields.io/github/license/MArpogaus/modern-tabs.svg?style=flat-square]]
+[[https://github.com/MArpogaus/modern-tabs/actions/workflows/test.yml][https://img.shields.io/github/actions/workflow/status/MArpogaus/modern-tabs/test.yml.svg?branch=main&label=tests&style=flat-square]]
 [[https://linkedin.com/in/MArpogaus][https://img.shields.io/badge/-LinkedIn-black.svg?style=flat-square&logo=linkedin&colorB=555]]
 
-* Emacs Package Template :TOC_3_gh:noexport:
+* Modern Tabs :TOC_3_gh:noexport:
   - [[#about-the-project][About The Project]]
   - [[#getting-started][Getting Started]]
-    - [[#use-the-template][Use the Template]]
-    - [[#file-structure][File Structure]]
+    - [[#installation][Installation]]
+    - [[#usage][Usage]]
+  - [[#customization][Customization]]
+    - [[#the-indicator][The Indicator]]
+    - [[#the-tab-bar][The Tab Bar]]
+    - [[#the-tab-line][The Tab Line]]
   - [[#development][Development]]
-    - [[#make-targets][Make Targets]]
-    - [[#conventions][Conventions]]
-  - [[#publishing-on-melpa][Publishing on MELPA]]
   - [[#contributions][Contributions]]
   - [[#license][License]]
   - [[#contact][Contact]]
 
 ** About The Project
 
-A starting point for an Emacs Lisp package that is ready for MELPA on
-day one: the file headers, the checks and the CI workflow are already
-in place, so the first commit is about the feature and not about
-scaffolding.
+Emacs has two rows of tabs.  The =tab-bar= shows one tab per tab or tab
+group; the =tab-line= shows one tab per buffer of a window.  This
+package gives both the look of the editors people come here from: a
+coloured indicator beside the selected tab, an icon on every tab, and —
+on the tab line — a close button that buries a buffer another window
+still shows and kills one no window shows.
 
-Everything here is checked by the same pipeline the other packages use.
-Running =make= byte-compiles with warnings as errors, runs =checkdoc=
-and =package-lint=, and runs the test suite.
+[[file:img/screenshot-light.png]]
+
+[[file:img/screenshot-dark.png]]
+
+The two modes are independent.  The five indicator options are named
+the same in both; the rest differ, because the two rows name their tabs
+differently — the tab bar keys its icons on the name of a group, the
+tab line asks a function for the icon of a buffer.
+
+The buttons of the two rows are one family.  Every one of them leads
+with a codicon, so the new button, the close button of both rows, the
+menu button and the mark on the selected tab are drawn at one weight
+and one visual size.
+
+Icons come from [[https://github.com/rainstormstudio/nerd-icons.el][nerd-icons]] where it is installed, and a plain =?= stands
+where an icon option names a glyph it cannot supply.  A graphic frame
+shows the first glyph of a candidate list as it is — which fonts draw
+it is the frame's business, fallbacks included.  A terminal refuses a
+private use glyph (that is where a nerd font keeps its own) and takes
+the first plain candidate it can encode, so one daemon serves a graphic
+frame and a terminal frame at once.  A symbol a UTF-8 terminal can
+encode but its font has no glyph for still shows a box: name plain
+strings in the icon options there.
+
+That refusal is a guess about a terminal Emacs cannot ask.  A terminal
+picks the font and draws the characters itself, and =char-displayable-p=
+answers for the coding system alone, so a glyph the font lacks arrives
+as a box rather than being refused.  Where your terminal does carry the
+icon font, say so and it draws what a graphic frame draws:
+
+#+begin_src emacs-lisp
+  (setopt modern-tab-terminal-glyphs t)
+#+end_src
+
+The coding system is still asked, so a candidate the terminal cannot
+encode is still refused, and setting it back to nil brings the plain
+candidates straight back.
 
 ** Getting Started
 
-*** Use the Template
+*** Installation
 
-Create a repository from this template on GitHub, then rename the
-placeholder to the package name.  The name appears in the file names,
-in the symbol prefix and in the URLs:
+The package needs Emacs 29.1 or later and nothing else.  nerd-icons is
+optional: install it for the glyphs, or name plain strings in the icon
+options.
 
-#+begin_src shell
-  name=your-package
-  git mv modern-tab.el "$name.el"
-  git mv test/modern-tab-test.el "test/$name-test.el"
-  grep -rl modern-tab . --exclude-dir=.git | xargs sed -i "s/modern-tab/$name/g"
-  grep -rl modern-tab-bars . --exclude-dir=.git | \
-      xargs sed -i "s/modern-tab-bars/$name/g"
-  make
+The package is =modern-tab=, after its main file, and every symbol
+carries that name as its prefix.  The repository is =modern-tabs=,
+because it holds the two rows of tabs Emacs has.  Both modes are
+autoloaded, so nothing needs requiring:
+
+#+begin_src emacs-lisp
+  (use-package modern-tab
+    :vc (:url "https://github.com/MArpogaus/modern-tabs" :rev :newest)
+    :hook ((after-init . modern-tab-bar-mode)
+           (after-init . modern-tab-line-mode)))
 #+end_src
 
-Then write the feature, adjust =Package-Requires= to the oldest Emacs
-release you support, and list that release first in the CI matrix.
+Drop either hook to run one mode alone.  The rows themselves stay
+yours: turn on =tab-bar-mode= and =global-tab-line-mode= where you want
+them.
 
-*** File Structure
+*** Usage
 
-#+begin_example
-  .dir-locals.el              indentation and fill column for contributors
-  .elpaignore                 files MELPA leaves out of the package
-  .github/workflows/test.yml  CI, one job per supported Emacs version
-  .gitignore
-  COPYING                     GPLv3
-  Makefile                    compile, checkdoc, lint, test
-  README.org
-  modern-tab.el               the package
-  test/modern-tab-test.el     ERT suite
-#+end_example
+=M-x modern-tab-bar-mode= dresses the tab bar.  Turn on =tab-bar-mode=
+to see it.
+
+=M-x modern-tab-line-mode= dresses the tab line.  Turn on
+=tab-line-mode= or =global-tab-line-mode= to see it — the row is yours,
+and this mode neither enables nor disables it.  A window showing one
+buffer hides its tab line; set =modern-tab-line-auto-hide= to nil to
+keep the row.
+
+Each mode also sets what Emacs draws its row with — the tab bar's
+separator and its automatic width, the tab line's separator and which
+of its buttons show — and gives every one of them back when it is
+turned off.
+
+On a terminal the tab bar shows no menu button, whatever
+=modern-tab-bar-format= says.  See [[file:docs/implementation.org][docs/implementation.org]] for the
+measurement behind that.
+
+** Customization
+
+*** The Indicator
+
+The indicator is the vertical bar beside a tab.  Each mode names five
+options for it: a width and a colour for the selected tab, a width and
+a colour for the others, and one height for both.  The two modes use
+the same names, with =modern-tab-bar-= or =modern-tab-line-= in front.
+
+| Option                                      | Default              |
+|---------------------------------------------+----------------------|
+| =modern-tab-bar-active-indicator-width=     | ~4~, in pixels       |
+| =modern-tab-bar-inactive-indicator-width=   | ~2~, in pixels       |
+| =modern-tab-bar-active-indicator-color=     | ~mode-line-emphasis~ |
+| =modern-tab-bar-inactive-indicator-color=   | ~shadow~             |
+| =modern-tab-bar-indicator-height=           | ~25~, in pixels      |
+| =modern-tab-line-active-indicator-width=    | ~3~, in pixels       |
+| =modern-tab-line-inactive-indicator-width=  | ~0~, in pixels       |
+| =modern-tab-line-active-indicator-color=    | ~mode-line-emphasis~ |
+| =modern-tab-line-inactive-indicator-color=  | ~shadow~             |
+| =modern-tab-line-indicator-height=          | ~20~, in pixels      |
+
+A width of nil or zero draws no indicator at all.  A colour is a colour
+name or a face, whose foreground is then the colour.  A frame without
+images draws one column of a vertical line instead.
+
+*** The Tab Bar
+
+| Option                               | What it says                                     |
+|--------------------------------------+--------------------------------------------------|
+| =modern-tab-bar-icons=               | the icon each group name shows, an alist         |
+| =modern-tab-bar-default-icon=        | the icon a group with no match shows             |
+| =modern-tab-bar-group-name-function= | rewrites the name of a group                     |
+| =modern-tab-bar-new-command=         | what the new button runs                         |
+| =modern-tab-bar-new-glyphs=          | the new button, best glyph first                 |
+| =modern-tab-bar-close-glyphs=        | the close button, best glyph first               |
+| =modern-tab-bar-current-glyphs=      | the mark on the selected tab, best first         |
+| =modern-tab-bar-menu-glyphs=         | the menu button, best glyph first                |
+| =modern-tab-bar-format=              | what the bar shows, as =tab-bar-format= takes it |
+
+An icon is a string shown as it is, a plist naming a nerd-icons glyph,
+or a function of no arguments that returns a string:
+
+#+begin_src emacs-lisp
+  (setopt modern-tab-bar-icons
+          '(("HOME"      :style "suc" :icon "custom-emacs")
+            ("^\\[P\\]"  :style "oct" :icon "repo")
+            ("config"    :style "md"  :icon "cog")))
+#+end_src
+
+The first pattern that matches the group name wins, and the patterns
+are matched with the case rules of whoever wrote them.
+
+The =:style= is the middle of a nerd-icons function name — =oct= for
+=nerd-icons-octicon=, =md= for =nerd-icons-mdicon= — and the =:icon= is
+the glyph name without its =nf-<style>-= front.  =M-x
+nerd-icons-insert= lists what there is.
+
+*** The Tab Line
+
+| Option                          | What it says                                    |
+|---------------------------------+-------------------------------------------------|
+| =modern-tab-line-icon-function= | the icon of a tab, called with its buffer       |
+| =modern-tab-line-close-glyphs=  | the close button, best first                    |
+| =modern-tab-line-auto-hide=     | whether a window with one buffer hides the row  |
+
+The icon function is =modern-tab-line-file-icon= by default, which asks
+nerd-icons about the name of the buffer as though it were a file name.
+
+The close button buries the buffer where another window still shows
+it, kills it where none does, and deletes the window with its last tab.
+=modern-tab-line-close-tab= is that command, should you want it on a
+key.
+
+An icon function is called with a buffer and returns a string, or nil
+for no icon.  =modern-tab-glyph= names a preferred glyph and a
+fallback, and =modern-tab-icon-for= keeps the answer — it calls a
+function only where it has none yet:
+
+#+begin_src emacs-lisp
+  (defun my/tab-icon (buffer)
+    (modern-tab-icon-for (buffer-name buffer)
+                         (if (buffer-modified-p buffer) "● " "  ")))
+
+  (setopt modern-tab-line-icon-function #'my/tab-icon)
+#+end_src
 
 ** Development
 
-*** Make Targets
+| Target     | What it does                             |
+|------------+------------------------------------------|
+| =compile=  | byte-compile, warnings are errors        |
+| =lint=     | package-lint, the rules MELPA applies    |
+| =relint=   | the regular expressions                  |
+| =test=     | ERT suite                                |
+| =clean=    | remove build output and the tool sandbox |
 
-| Target     | What it does                                    |
-|------------+-------------------------------------------------|
-| =compile=  | byte-compile, warnings are errors               |
-| =checkdoc= | documentation style, any output fails           |
-| =lint=     | package-lint, the rules MELPA applies           |
-| =test=     | ERT suite                                       |
-| =clean=    | remove build output and the tool sandbox        |
-
-Plain =make= runs all checks in that order, exactly as the CI does.
-The =lint= target installs package-lint into =.sandbox/=, so a fresh
-checkout needs nothing but Emacs and =make=.
-
-*** Conventions
-
-- One package prefix for every symbol; private ones use a double dash.
-- Every file carries the header block, =;;; Commentary:=, =;;; Code:=,
-  a =provide= form and the footer comment.
-- Autoload cookies on the entry points only: commands, minor modes and
-  variables a user sets before the package is loaded.
-- Docstrings end sentences with two spaces, name their arguments in
-  upper case and quote symbols as =`symbol'=.
-- Commits follow the conventional commit style; work happens on =dev=
-  and reaches =main= as a merge commit, which is then tagged.
-- Code written with an AI assistant carries an =Assisted-by:= line under
-  the =Author:= line, which is what MELPA asks for:
-  =;; Assisted-by: Claude:claude-opus-5=.
-
-** Publishing on MELPA
-
-1. Tag a release, so MELPA Stable has something to build.
-2. Fork [[https://github.com/melpa/melpa][melpa/melpa]] and add =recipes/<package>=:
-
-   #+begin_src emacs-lisp
-     (modern-tab
-      :fetcher github
-      :repo "MArpogaus/modern-tab")
-   #+end_src
-
-   Add =:branch "main"= when the default branch is not the one to
-   package.  The =.elpaignore= file keeps the tests and the CI files
-   out; a =:files= specification is not needed.
-3. Check the recipe locally in the melpa checkout:
-
-   #+begin_src shell
-     make recipes/modern-tab
-     make sandbox INSTALL=modern-tab
-   #+end_src
-4. Open the pull request.  The checklist in the template asks for the
-   package to be lint-clean, which =make lint= already answers.
+Plain =make= runs the checks in that order, exactly as the CI does.
+The indent, checkdoc and complexity checks are pre-commit hooks of
+[[https://github.com/MArpogaus/emacs-pre-commit-hooks][emacs-pre-commit-hooks]]: indent gives Lisp the indentation =indent-region=
+gives it, each file loaded first, checkdoc reads the documentation
+strings, and complexity stops a commit where a function costs a reader
+more than fifteen.  Check-declare and melpazoid join them before a
+push, the first saying where a declare-function has gone stale, the
+second reading the package as a MELPA reviewer would.  See
+[[file:docs/implementation.org][docs/implementation.org]] for how the two modes are built.
 
 ** Contributions
 
 Contributions are greatly appreciated!  Feel free to check the
-[[https://github.com/MArpogaus/modern-tab-bars/issues][issues page]] or submit a [[https://github.com/MArpogaus/modern-tab-bars/pulls][pull request]].
+[[https://github.com/MArpogaus/modern-tabs/issues][issues page]] or submit a [[https://github.com/MArpogaus/modern-tabs/pulls][pull request]].
 
 ** License
 
@@ -135,4 +234,4 @@ Distributed under the [[file:COPYING][GPLv3]] License.
 
 [[https://github.com/MArpogaus/][Marcel Arpogaus]] - [[mailto:znepry.necbtnhf@tznvy.pbz][znepry.necbtnhf@tznvy.pbz]] (encrypted with [[https://rot13.com/][ROT13]])
 
-Project Link: [[https://github.com/MArpogaus/modern-tab-bars][https://github.com/MArpogaus/modern-tab-bars]]
+Project Link: [[https://github.com/MArpogaus/modern-tabs][https://github.com/MArpogaus/modern-tabs]]

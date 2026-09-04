@@ -1,12 +1,13 @@
-;;; modern-tab.el --- One line that says what this does -*- lexical-binding: t; -*-
+;;; modern-tab.el --- The common part of modern-tabs -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2026 Marcel Arpogaus
 
 ;; Author: Marcel Arpogaus <znepry.necbtnhf@tznvy.pbz>
-;; Version: 0.1
+;; Assisted-by: Claude:claude-opus-5
+;; Version: 1.0
 ;; Package-Requires: ((emacs "29.1"))
-;; Keywords: convenience
-;; URL: https://github.com/MArpogaus/modern-tab
+;; Keywords: convenience, tabs
+;; URL: https://github.com/MArpogaus/modern-tabs
 
 ;; This file is not part of GNU Emacs.
 
@@ -25,47 +26,293 @@
 
 ;;; Commentary:
 
-;; Describe here what the package is for, and how to start using it.
-;; This text is what `M-x describe-package' shows, so write it for
-;; somebody who just found the package and wonders whether it helps.
+;; Two minor modes that give the two rows of tabs Emacs has the look of
+;; the editors people come here from: a coloured bar beside the selected
+;; tab, an icon on every tab, and — on the tab line — a close button
+;; that buries a buffer another window shows and kills one no window
+;; does.
+;;
+;;   `modern-tab-bar-mode'   the tab bar, one tab per tab group
+;;   `modern-tab-line-mode'  the tab line, one tab per window buffer
+;;
+;; The two are independent — turn on either.  The indicator options
+;; carry matching names in both; the icon options do not, because a tab
+;; group is named by a string and a tab of the tab line by a buffer.
+;;
+;; This file is the common one: the indicator beside a tab, the glyph
+;; fallback, the icon table and the way a mode gives Emacs its
+;; variables back.  It is also the file package-lint reads as the
+;; package's main one, which is why it carries the name the whole
+;; package is prefixed with: package-lint takes that prefix from the
+;; main file's name, and `modern-tab-bar-mode' and
+;; `modern-tab-line-mode' both live under `modern-tab-'.  It carries
+;; the version and the dependency line for the same reason, and elpaca
+;; reads them here too, because the id it is installed by is the name
+;; of this file.  The repository is `modern-tabs', after the two rows
+;; of tabs Emacs has; a recipe names package and repository apart.
+;;
+;; Both modes are autoloaded, so nothing here needs requiring:
+;;
+;;   (use-package modern-tab
+;;     :vc (:url "https://github.com/MArpogaus/modern-tabs" :rev :newest)
+;;     :hook ((after-init . modern-tab-bar-mode)
+;;            (after-init . modern-tab-line-mode)))
+;;
+;; The buttons of the two rows are one family: every glyph a button
+;; leads with is a codicon, so the plus of the tab bar, the close
+;; button of both rows, the menu button and the mark on the selected
+;; tab carry one weight and one visual size.  A filled shape among thin
+;; ones shouts, and so does a bold one.
+;;
+;; Icons come from nerd-icons where it is installed.  A graphic frame
+;; shows the first glyph of a candidate list as it is — which fonts
+;; draw it is the frame's business, fallbacks included.  A terminal is
+;; asked whether it can encode the characters, and a glyph of a
+;; private use area is refused there.  A symbol a UTF-8 terminal can
+;; encode but its font has no glyph for still shows a box — name plain
+;; strings in the icon options there.
 
 ;;; Code:
 
+(require 'seq)
+
 (defgroup modern-tab nil
-  "One line that says what this does."
+  "A modern look for the tab bar and the tab line."
   :group 'convenience
   :prefix "modern-tab-")
 
-;;;; Customization
+;;;; The bar beside a tab
 
-(defcustom modern-tab-greeting "Hello"
-  "Word the greeting starts with."
-  :type 'string)
+(defvar modern-tab--indicators (make-hash-table :test #'equal)
+  "The bar images built so far, keyed on height, width and colour.
+Nothing invalidates them: a theme brings another colour, which is
+another key.")
 
-;;;; Internal functions
+(defun modern-tab--color (spec)
+  "Return the colour SPEC names, or nil for none.
+SPEC is a colour name, or a face whose foreground is the colour.  The
+default face ends the chain: a terminal theme often leaves a face
+without a foreground of its own, and nil is not a colour."
+  (cond ((null spec) nil)
+        ((facep spec) (face-foreground spec nil 'default))
+        (t spec)))
 
-(defun modern-tab--compose (name)
-  "Return the greeting for NAME."
-  (format "%s, %s!" modern-tab-greeting name))
+(defun modern-tab-indicator (height width color)
+  "Return a bar of HEIGHT and WIDTH pixels, drawn in COLOR.
+WIDTH of nil or zero is no bar at all, and the answer is then the empty
+string.  COLOR is a colour name or a face, as `modern-tab--color'
+takes it.
 
-;;;; Commands
+A frame without images — a terminal, or one built without PBM — draws
+one column of a vertical line instead.  Thanks to doom-modeline for the
+idea."
+  (let ((color (modern-tab--color color)))
+    (cond
+     ((or (null width) (zerop width)) "")
+     ((and (display-graphic-p) (image-type-available-p 'pbm))
+      ;; A handful of these exist in a session, one per height, width
+      ;; and colour, and building one means a fresh payload string and
+      ;; a spec the image cache then compares whole.
+      (with-memoization (gethash (list height width color) modern-tab--indicators)
+        (propertize " " 'display
+                    (create-image
+                     (concat (format "P1\n%i %i\n" width height)
+                             (make-string (* width height) ?1) "\n")
+                     'pbm t :foreground color :ascent 'center))))
+     ;; A face attribute of nil is not "leave it alone", it is an error
+     ;; the display logs on every redisplay.  A bar without a colour
+     ;; wears no face and takes the one of the row it sits in.
+     (t (propertize "|" 'face (and color (list :foreground color
+                                               :background color)))))))
 
-;;;###autoload
-(defun modern-tab-greet (name)
-  "Greet NAME in the echo area."
-  (interactive (list (read-string "Name: " user-full-name)))
-  (message "%s" (modern-tab--compose name)))
+;;;; Glyphs, and what a frame can draw
 
-;;;; Minor mode
+(defun modern-tab--private-use-p (char)
+  "Return non-nil where CHAR is in one of Unicode's private use areas.
+The three of them: the block in the basic plane, and the whole of
+planes 15 and 16."
+  (or (<= #xE000 char #xF8FF)
+      (<= #xF0000 char #xFFFFD)
+      (<= #x100000 char #x10FFFD)))
 
-;;;###autoload
-(define-minor-mode modern-tab-mode
-  "Toggle the feature this package provides."
-  :global t
-  :group 'modern-tab
-  (if modern-tab-mode
-      (message "modern-tab enabled")
-    (message "modern-tab disabled")))
+(defcustom modern-tab-terminal-glyphs nil
+  "Whether this terminal draws the glyphs a graphic frame draws.
+Emacs can ask a font what it holds and a terminal nothing: the terminal
+picks the font and draws the characters, and `char-displayable-p'
+answers for the coding system alone, so a glyph the font lacks arrives
+as an empty box instead of being refused.  The glyphs of a nerd font
+live in Unicode's private use areas, which no terminal font can be
+assumed to carry, so a terminal is given the plain candidates.
+
+Set this where the terminal does carry them.  It is a word from the
+reader and not a question Emacs can answer: the coding system is still
+asked, and a wrong answer here shows boxes where the icons belong."
+  :type 'boolean
+  ;; `custom-initialize-reset', which a `defcustom' takes by default,
+  ;; calls the `:set' function as the option is defined — and the
+  ;; forgetting it does is defined further down this file.  There is
+  ;; nothing drawn to forget at that moment anyway.
+  :initialize #'custom-initialize-default
+  :set #'modern-tab-set-and-forget
+  :group 'modern-tab)
+
+(defun modern-tab--encodable-p (string)
+  "Return non-nil where a terminal can encode every character of STRING.
+Every character, and not the first one alone: a candidate is padded
+with spaces, and asking about the first character asked about a space.
+`char-displayable-p' answers for the coding system — a UTF-8 terminal
+says yes to anything it can encode, box or not — so a glyph from a
+private use area is refused on top of it: that is where a nerd font
+keeps its own, and no terminal font can be assumed to carry them.
+`modern-tab-terminal-glyphs' is the reader saying that this one does."
+  (seq-every-p (lambda (char)
+                 (and (char-displayable-p char)
+                      (or modern-tab-terminal-glyphs
+                          (not (modern-tab--private-use-p char)))))
+               string))
+
+(defun modern-tab-glyph (&rest candidates)
+  "Return the first of CANDIDATES this display can show.
+A graphic frame shows the first one there is, as it is: which fonts
+draw it is the frame's own business, fallbacks included.  A candidate
+can be nil, as the answer of a nerd-icons function that is not
+installed is, and nil is not shown.  A terminal gets the
+first candidate it can encode that names no private use glyph, and the
+last one where none passes — so keep a plain string there.  A terminal
+whose font carries the icons takes the first candidate like a graphic
+frame; see `modern-tab-terminal-glyphs'."
+  (if (display-graphic-p)
+      (seq-find #'identity candidates)
+    (or (seq-find (lambda (c) (and (stringp c) (not (string-empty-p c))
+                                   (modern-tab--encodable-p c)))
+                  (butlast candidates))
+        (car (last candidates)))))
+
+;;;; Icons
+
+(defvar modern-tab--icons (make-hash-table :test #'equal)
+  "The icon each key answered, kept per kind of display.
+A terminal and a graphic frame answer differently, and one session can
+hold both.  `modern-tab-forget' empties this where the answer can
+change: another icon list, or a font arriving.")
+
+(defun modern-tab-forget (&rest _)
+  "Forget the icons answered so far, and draw the rows again.
+A row of the tab line is kept in the `tab-line-cache' parameter of its
+window, under a key that says nothing about the options of this
+package: a row already drawn would keep the glyph the option held
+before the change."
+  (clrhash modern-tab--icons)
+  (walk-windows (lambda (window)
+                  (set-window-parameter window 'tab-line-cache nil))
+                'no-mini t)
+  (force-mode-line-update t))
+
+(defun modern-tab-set-and-forget (symbol value)
+  "Set SYMBOL to VALUE and forget the icons answered before it changed.
+A `:set' function for every option an icon depends on."
+  (set-default symbol value)
+  (modern-tab-forget))
+
+(defun modern-tab--nerd-icon (spec)
+  "Return the nerd-icons glyph SPEC names, or a plain character.
+SPEC is a plist with `:style' and `:icon'.  The style is the middle of
+a nerd-icons function name — \"oct\" for `nerd-icons-octicon', \"md\"
+for `nerd-icons-mdicon' — and the icon is the glyph name without its
+\"nf-<style>-\" front.  The \"suc\" style is the exception: its glyphs
+are named \"nf-<icon>\", with no style in the middle.  Inspired by
+nerd-icons-corfu."
+  (let* ((style (plist-get spec :style))
+         (icon (plist-get spec :icon))
+         ;; `intern-soft': a style nobody defined is a typo, and
+         ;; interning it would leave it in the obarray for good.
+         (fun (intern-soft (concat "nerd-icons-" style "icon")))
+         (name (if (equal style "suc")
+                   (concat "nf-" icon)
+                 (concat "nf-" style "-" icon))))
+    (modern-tab-glyph
+     ;; nerd-icons signals where the name is not one of its own, and
+     ;; this runs from redisplay: one wrong character in an option
+     ;; would otherwise break the whole row on every draw.
+     (and fun (fboundp fun)
+          (condition-case nil (funcall fun name) (error nil)))
+     "?")))
+
+(defun modern-tab-icon (spec)
+  "Return SPEC as the string that shows on a tab.
+A string stands for itself, a plist names a nerd icon, a function is
+called for one, and nil is nothing.  The function is what a caller
+whose lookup is expensive passes, so that `modern-tab-icon-for' can
+leave it uncalled where it already has the answer."
+  (cond ((null spec) "")
+        ((stringp spec) spec)
+        ((functionp spec) (funcall spec))
+        (t (modern-tab--nerd-icon spec))))
+
+(defun modern-tab-icon-for (key spec)
+  "Return the icon SPEC names for KEY, and keep the answer.
+A row of tabs is built again on every command, and finding a nerd icon
+walks the table of its style — 6880 entries for the material design
+one — so the answer is kept, per key and per kind of display.
+
+SPEC is read only where KEY has no answer yet: where it has one, SPEC
+is ignored and the kept answer comes back, so a caller that changes
+SPEC calls `modern-tab-forget' first.  A SPEC that is a function is not
+called at all on a hit, which is how a caller keeps an expensive lookup
+out of every redisplay."
+  (with-memoization (gethash (list key (display-graphic-p))
+                             modern-tab--icons)
+    (modern-tab-icon spec)))
+
+(defun modern-tab--button (key glyphs)
+  "Return the best of GLYPHS this display draws, kept under KEY.
+GLYPHS is a list of candidates as `modern-tab-glyph' takes them, and
+KEY is what `modern-tab-icon-for' keeps the answer under: the
+candidates are walked only where KEY has no answer for this kind of
+display yet.  Every button of both rows is drawn through here."
+  (modern-tab-icon-for key (lambda () (apply #'modern-tab-glyph glyphs))))
+
+;;;; What a mode borrows and gives back
+
+(defvar modern-tab--borrowed nil
+  "What each mode found in the variables it sets, and gives back.
+An alist of (MODE . ((SYMBOL . VALUE) ...)).  `custom-reevaluate-setting'
+was here before and it is the wrong tool twice over: a plain `defvar'
+has no standard value, so it was set to nil — `tab-line-close-button'
+came back as nothing and the stock tab line lost its close button —
+and a value the reader had set with `setq' was thrown away for
+whatever the custom file said.")
+
+(defun modern-tab--borrow (mode &rest symbols)
+  "Keep what SYMBOLS hold, in the name of MODE, before it sets them.
+Non-nil where this call is the one that borrowed.  Nothing is kept for
+a MODE that has borrowed already: `define-minor-mode' runs its body on
+every call and a nil argument means enable, so a mode enabled twice
+would otherwise record the values it set itself and never give the
+reader's back."
+  (unless (alist-get mode modern-tab--borrowed)
+    (setf (alist-get mode modern-tab--borrowed)
+          (mapcar (lambda (symbol) (cons symbol (symbol-value symbol)))
+                  symbols))
+    t))
+
+(defun modern-tab--give-back (mode)
+  "Put back what MODE borrowed, exactly as it was.
+Nil where MODE has nothing borrowed, which is a mode that was never on:
+its teardown must give nothing back and switch nothing off."
+  (when-let* ((cells (alist-get mode modern-tab--borrowed)))
+    (dolist (cell cells)
+      (set (car cell) (cdr cell)))
+    (setf (alist-get mode modern-tab--borrowed nil t) nil)
+    t))
+
+;;;; What a mode gives back when it is turned off
+
+;; The icons of a frame depend on the font it has, so a font arriving is
+;; a reason to forget them.  On the hook of the file rather than of a
+;; mode: two modes read the same table, and either of them turning off
+;; used to take the hook away from the other.
+(add-hook 'after-setting-font-hook #'modern-tab-forget)
 
 (provide 'modern-tab)
 ;;; modern-tab.el ends here
