@@ -46,7 +46,8 @@ with a codicon, so the new button, the close button of both rows, the
 menu button and the mark on the selected tab are drawn at one weight
 and one visual size.
 
-Icons come from [[https://github.com/rainstormstudio/nerd-icons.el][nerd-icons]] where it is installed.  A graphic frame
+Icons come from [[https://github.com/rainstormstudio/nerd-icons.el][nerd-icons]] where it is installed, and a plain =?= stands
+where an icon option names a glyph it cannot supply.  A graphic frame
 shows the first glyph of a candidate list as it is — which fonts draw
 it is the frame's business, fallbacks included.  A terminal refuses a
 private use glyph (that is where a nerd font keeps its own) and takes

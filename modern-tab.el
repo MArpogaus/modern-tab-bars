@@ -173,14 +173,16 @@ keeps its own, and no terminal font can be assumed to carry them.
 
 (defun modern-tab-glyph (&rest candidates)
   "Return the first of CANDIDATES this display can show.
-A graphic frame shows the first one as it is: which fonts draw it is
-the frame's own business, fallbacks included.  A terminal gets the
+A graphic frame shows the first one there is, as it is: which fonts
+draw it is the frame's own business, fallbacks included.  A candidate
+can be nil, as the answer of a nerd-icons function that is not
+installed is, and nil is not shown.  A terminal gets the
 first candidate it can encode that names no private use glyph, and the
 last one where none passes — so keep a plain string there.  A terminal
 whose font carries the icons takes the first candidate like a graphic
 frame; see `modern-tab-terminal-glyphs'."
   (if (display-graphic-p)
-      (car candidates)
+      (seq-find #'identity candidates)
     (or (seq-find (lambda (c) (and (stringp c) (not (string-empty-p c))
                                    (modern-tab--encodable-p c)))
                   (butlast candidates))
