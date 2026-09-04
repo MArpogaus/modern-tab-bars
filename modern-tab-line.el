@@ -125,16 +125,14 @@ a reader can set it to a function that answers with neither."
 
 (defun modern-tab-line-close-button ()
   "Return the close button of the tab line, drawn for this display.
-Per redisplay and not once at enable: `modern-tab-icon-for' keeps the
+Per redisplay and not once at enable: `modern-tab-button' keeps the
 answer per kind of display, so a daemon serving a graphic frame and a
 terminal frame gives each the glyph it can draw.  Settled at enable it
 was settled for the display the enable happened on — and a daemon
 enables its modes with no frame at all, where the answer is a
 terminal's."
-  (propertize (modern-tab-icon-for
-               'line-close-button
-               (lambda () (apply #'modern-tab-glyph
-                                 modern-tab-line-close-glyphs)))
+  (propertize (modern-tab-button 'line-close-button
+                                 modern-tab-line-close-glyphs)
               'keymap tab-line-tab-close-map
               'mouse-face 'tab-line-close-highlight
               'help-echo "Click to close tab"))

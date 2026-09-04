@@ -237,6 +237,14 @@ out of every redisplay."
                              modern-tab--icons)
     (modern-tab-icon spec)))
 
+(defun modern-tab-button (key glyphs)
+  "Return the best of GLYPHS this display draws, kept under KEY.
+GLYPHS is a list of candidates as `modern-tab-glyph' takes them, and
+KEY is what `modern-tab-icon-for' keeps the answer under: the
+candidates are walked only where KEY has no answer for this kind of
+display yet.  Every button of both rows is drawn through here."
+  (modern-tab-icon-for key (lambda () (apply #'modern-tab-glyph glyphs))))
+
 ;;;; What a mode borrows and gives back
 
 (defvar modern-tab--borrowed nil

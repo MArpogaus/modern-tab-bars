@@ -133,6 +133,17 @@ the same glyph, with the padding each row needs."
   (should-not (equal (car (last modern-tab-bar-menu-glyphs))
                      (car (last modern-tab-bar-current-glyphs)))))
 
+(ert-deftest modern-tab-test-a-button-is-resolved-once-and-kept ()
+  "`modern-tab-button' picks a candidate for this display and keeps it."
+  (skip-unless (not (display-graphic-p)))
+  (modern-tab-forget)
+  ;; The nerd candidate is a private use glyph, which a terminal refuses.
+  (should (equal (modern-tab-button 'a-button '("\uEA76 " "x ")) "x "))
+  ;; Kept: the candidates of the second call are not looked at.
+  (should (equal (modern-tab-button 'a-button '("!")) "x "))
+  (modern-tab-forget)
+  (should (equal (modern-tab-button 'a-button '("!")) "!")))
+
 (ert-deftest modern-tab-test-an-icon-spec-is-a-string-or-a-plist ()
   "A string stands for itself, nil is nothing, a plist names a nerd icon."
   (should (equal (modern-tab-icon "*") "*"))
