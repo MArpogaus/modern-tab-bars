@@ -87,11 +87,14 @@ of every window."
   :type 'boolean
   :set (lambda (symbol value)
          (set-default symbol value)
-         ;; Off while the mode is on used to leave every row that was
-         ;; already hidden hidden for good.
-         (unless value
-           (when (fboundp 'modern-tab-line--show-everywhere)
-             (modern-tab-line--show-everywhere)))))
+         ;; A change takes effect at once, in both directions: the
+         ;; rows this package hid come back, and the decision is then
+         ;; made again, which does nothing where VALUE is nil.  The
+         ;; option can be set while this file is still loading, so
+         ;; the functions below it are asked for first.
+         (when (fboundp 'modern-tab-line--show-everywhere)
+           (modern-tab-line--show-everywhere)
+           (modern-tab-line-update-frame))))
 
 ;;;; The parts of a tab
 

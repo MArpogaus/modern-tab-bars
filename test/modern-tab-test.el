@@ -559,6 +559,31 @@ The row is the reader's, the way the tab bar is with
     (set-window-parameter nil 'tab-line-format nil)
     (set-window-parameter nil 'modern-tab-line-hide nil)))
 
+(ert-deftest modern-tab-line-test-hiding-takes-effect-in-both-ways ()
+  "Setting the option acts at once, whichever way it is set.
+Off left every row this package had hidden hidden for good, and on
+left every row of a single tab showing until something changed a
+window.  The `:set' function answers for both directions."
+  (let ((one (generate-new-buffer "modern-tab-line-test-one")))
+    (unwind-protect
+        (progn
+          (set-window-buffer nil one)
+          (set-window-prev-buffers nil nil)
+          (set-window-next-buffers nil nil)
+          (set-window-parameter nil 'tab-line-format nil)
+          (set-window-parameter nil 'modern-tab-line-hide nil)
+          (customize-set-variable 'modern-tab-line-auto-hide t)
+          (should (eq (window-parameter nil 'tab-line-format) 'none))
+          (customize-set-variable 'modern-tab-line-auto-hide nil)
+          (should-not (window-parameter nil 'tab-line-format))
+          ;; and on again, which is the direction that did nothing
+          (customize-set-variable 'modern-tab-line-auto-hide t)
+          (should (eq (window-parameter nil 'tab-line-format) 'none)))
+      (customize-set-variable 'modern-tab-line-auto-hide t)
+      (set-window-parameter nil 'tab-line-format nil)
+      (set-window-parameter nil 'modern-tab-line-hide nil)
+      (kill-buffer one))))
+
 (ert-deftest modern-tab-line-test-a-hiding-of-another-stays ()
   "A `none' this package did not set is not undone, and not re-decided.
 `auto-side-windows' hides the side panels of a frame with a `none' of
