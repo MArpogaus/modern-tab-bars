@@ -66,8 +66,8 @@ parameter of every window, which is where a row already drawn is kept.
 * What a mode gives back
 
 Both modes set variables that belong to Emacs, and both put back what
-they found.  =modern-tab-borrow= keeps the value of each variable under
-the name of the mode before the mode sets it, and =modern-tab-give-back=
+they found.  =modern-tab--borrow= keeps the value of each variable under
+the name of the mode before the mode sets it, and =modern-tab--give-back=
 writes those values back.  It keeps nothing for a mode that has
 borrowed already: =define-minor-mode= runs its body on every call, and a
 mode enabled twice would otherwise record the values it set itself.

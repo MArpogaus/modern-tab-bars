@@ -125,13 +125,13 @@ a reader can set it to a function that answers with neither."
 
 (defun modern-tab-line-close-button ()
   "Return the close button of the tab line, drawn for this display.
-Per redisplay and not once at enable: `modern-tab-button' keeps the
+Per redisplay and not once at enable: `modern-tab--button' keeps the
 answer per kind of display, so a daemon serving a graphic frame and a
 terminal frame gives each the glyph it can draw.  Settled at enable it
 was settled for the display the enable happened on — and a daemon
 enables its modes with no frame at all, where the answer is a
 terminal's."
-  (propertize (modern-tab-button 'line-close-button
+  (propertize (modern-tab--button 'line-close-button
                                  modern-tab-line-close-glyphs)
               'keymap tab-line-tab-close-map
               'mouse-face 'tab-line-close-highlight
@@ -283,7 +283,7 @@ puts on a side panel, is left alone."
   (add-hook 'window-buffer-change-functions #'modern-tab-line-update-frame)
   (add-hook 'window-configuration-change-hook #'modern-tab-line-update-frame)
   (add-hook 'kill-buffer-hook #'modern-tab-line--buffer-killed)
-  (modern-tab-borrow 'modern-tab-line-mode
+  (modern-tab--borrow 'modern-tab-line-mode
                      'tab-line-tab-name-function
                      'tab-line-tab-name-format-function
                      'tab-line-close-tab-function
@@ -306,7 +306,7 @@ puts on a side panel, is left alone."
   (remove-hook 'kill-buffer-hook #'modern-tab-line--buffer-killed)
   ;; Nothing borrowed is a mode that was never on: it hid no row, and
   ;; its teardown must give nothing back.
-  (when (modern-tab-give-back 'modern-tab-line-mode)
+  (when (modern-tab--give-back 'modern-tab-line-mode)
     (modern-tab-line--show-everywhere)))
 
 ;;;###autoload

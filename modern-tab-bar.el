@@ -140,17 +140,17 @@ spaces, as wide as the glyphs before them."
 
 (defun modern-tab-bar-new-button ()
   "Return the string of the new button, drawn for this display.
-Per redisplay and not once at enable: `modern-tab-button' keeps the
+Per redisplay and not once at enable: `modern-tab--button' keeps the
 answer per display, so a daemon serving a graphic frame and a terminal
 frame gives each the glyph it can draw, and a reader who customizes
 `modern-tab-bar-new-glyphs' sees the new one at the next redisplay."
-  (modern-tab-button 'new-button modern-tab-bar-new-glyphs))
+  (modern-tab--button 'new-button modern-tab-bar-new-glyphs))
 
 (defun modern-tab-bar-close-button ()
   "Return the string of the close button, drawn for this display.
 The `close-tab' property is what the tab bar dispatches a click on it
 on.  See `modern-tab-bar-new-button' for why it is not settled once."
-  (propertize (modern-tab-button 'close-button modern-tab-bar-close-glyphs)
+  (propertize (modern-tab--button 'close-button modern-tab-bar-close-glyphs)
               'close-tab t
               'help-echo "Click to close tab"))
 
@@ -221,7 +221,7 @@ each of them."
     ;; keeps readable.
     `((menu-bar menu-item
                 ,(propertize
-                  (modern-tab-button 'menu-button
+                  (modern-tab--button 'menu-button
                                      modern-tab-bar-menu-glyphs)
                   'face (modern-tab-bar--button-face))
                 tab-bar-menu-bar :help "Menu bar"))))
@@ -270,7 +270,7 @@ This is what `tab-bar-tab-name-format-function' is set to."
   (let ((selected (eq (car tab) 'current-tab)))
     (propertize
      (concat (if selected
-                 (modern-tab-button 'current-glyph
+                 (modern-tab--button 'current-glyph
                                     modern-tab-bar-current-glyphs)
                ;; As wide as the mark, so the names of the tabs line
                ;; up: every candidate of `modern-tab-bar-current-glyphs'
@@ -301,7 +301,7 @@ This is what `tab-bar-tab-name-format-function' is set to."
   ;; `modern-tab-bar-new-button', `modern-tab-bar-close-button' and
   ;; `modern-tab-bar--menu-bar': settled here they would be settled for
   ;; one display, and for the glyphs the options held at the enable.
-  (modern-tab-borrow 'modern-tab-bar-mode
+  (modern-tab--borrow 'modern-tab-bar-mode
                      'tab-bar-format 'tab-bar-separator
                      'tab-bar-auto-width
                      'tab-bar-tab-group-format-function
@@ -314,7 +314,7 @@ This is what `tab-bar-tab-name-format-function' is set to."
 
 (defun modern-tab-bar--teardown ()
   "Give the tab bar back what it had before the mode."
-  (modern-tab-give-back 'modern-tab-bar-mode))
+  (modern-tab--give-back 'modern-tab-bar-mode))
 
 ;;;###autoload
 (define-minor-mode modern-tab-bar-mode

@@ -237,7 +237,7 @@ out of every redisplay."
                              modern-tab--icons)
     (modern-tab-icon spec)))
 
-(defun modern-tab-button (key glyphs)
+(defun modern-tab--button (key glyphs)
   "Return the best of GLYPHS this display draws, kept under KEY.
 GLYPHS is a list of candidates as `modern-tab-glyph' takes them, and
 KEY is what `modern-tab-icon-for' keeps the answer under: the
@@ -256,7 +256,7 @@ came back as nothing and the stock tab line lost its close button —
 and a value the reader had set with `setq' was thrown away for
 whatever the custom file said.")
 
-(defun modern-tab-borrow (mode &rest symbols)
+(defun modern-tab--borrow (mode &rest symbols)
   "Keep what SYMBOLS hold, in the name of MODE, before it sets them.
 Non-nil where this call is the one that borrowed.  Nothing is kept for
 a MODE that has borrowed already: `define-minor-mode' runs its body on
@@ -269,7 +269,7 @@ reader's back."
                   symbols))
     t))
 
-(defun modern-tab-give-back (mode)
+(defun modern-tab--give-back (mode)
   "Put back what MODE borrowed, exactly as it was.
 Nil where MODE has nothing borrowed, which is a mode that was never on:
 its teardown must give nothing back and switch nothing off."

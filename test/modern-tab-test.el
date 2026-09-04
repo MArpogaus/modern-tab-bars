@@ -134,15 +134,15 @@ the same glyph, with the padding each row needs."
                      (car (last modern-tab-bar-current-glyphs)))))
 
 (ert-deftest modern-tab-test-a-button-is-resolved-once-and-kept ()
-  "`modern-tab-button' picks a candidate for this display and keeps it."
+  "`modern-tab--button' picks a candidate for this display and keeps it."
   (skip-unless (not (display-graphic-p)))
   (modern-tab-forget)
   ;; The nerd candidate is a private use glyph, which a terminal refuses.
-  (should (equal (modern-tab-button 'a-button '("\uEA76 " "x ")) "x "))
+  (should (equal (modern-tab--button 'a-button '("\uEA76 " "x ")) "x "))
   ;; Kept: the candidates of the second call are not looked at.
-  (should (equal (modern-tab-button 'a-button '("!")) "x "))
+  (should (equal (modern-tab--button 'a-button '("!")) "x "))
   (modern-tab-forget)
-  (should (equal (modern-tab-button 'a-button '("!")) "!")))
+  (should (equal (modern-tab--button 'a-button '("!")) "!")))
 
 (ert-deftest modern-tab-test-an-icon-spec-is-a-string-or-a-plist ()
   "A string stands for itself, nil is nothing, a plist names a nerd icon."
@@ -620,16 +620,16 @@ means enable, so a mode enabled twice would record the values it set
 itself and give those back instead of the reader's."
   (let ((modern-tab--borrowed nil)
         (modern-tab-test--borrowed-var 'reader))
-    (should (modern-tab-borrow 'modern-tab-test-mode
+    (should (modern-tab--borrow 'modern-tab-test-mode
                                'modern-tab-test--borrowed-var))
     (setq modern-tab-test--borrowed-var 'mine)
-    (should-not (modern-tab-borrow 'modern-tab-test-mode
+    (should-not (modern-tab--borrow 'modern-tab-test-mode
                                    'modern-tab-test--borrowed-var))
-    (should (modern-tab-give-back 'modern-tab-test-mode))
+    (should (modern-tab--give-back 'modern-tab-test-mode))
     (should (eq modern-tab-test--borrowed-var 'reader))
     ;; and a mode that borrowed nothing gives nothing back: its
     ;; teardown must not switch off what the package never touched
-    (should-not (modern-tab-give-back 'modern-tab-test-mode))))
+    (should-not (modern-tab--give-back 'modern-tab-test-mode))))
 
 (ert-deftest modern-tab-line-test-the-mode-survives-its-own-hook ()
   "A reader may turn this mode on from `tab-line-mode-hook'.
