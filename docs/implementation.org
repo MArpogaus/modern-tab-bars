@@ -14,8 +14,8 @@ recipe names the two separately, so the difference costs nothing.
 
 There is no entry file.  Both modes are autoloaded, so a reader who
 installs the package can name them in a hook without requiring
-anything, and the file whose only body was two =require= forms is
-gone.
+anything.  A file whose only body is two =require= forms would earn
+nothing.
 
 * The indicator
 
@@ -38,9 +38,9 @@ other.
 
 =modern-tab-glyph= takes candidates, best first.  A graphic frame
 shows the first one as it is: which fonts draw a character — the face's
-own, or a fallback the fontset finds — is the frame's business, and a
-version that refused fallback fonts refused the reader's =✕= and every
-nerd glyph with it.  The candidate list exists for terminals.
+own, or a fallback the fontset finds — is the frame's business.
+Refusing a fallback font would refuse the reader's =✕= and every nerd
+glyph with it.  The candidate list exists for terminals.
 
 A terminal has no font to ask.  =char-displayable-p= answers for the
 coding system there, and a UTF-8 terminal says yes to every character
@@ -51,6 +51,17 @@ first candidate that passes whole wins, the last one being the answer
 where none does.  Every character is asked about, not the first one
 alone: the glyphs are padded with spaces, and a question about the
 first character was a question about a space.
+
+The buttons of the two rows are one family.  Every candidate list
+leads with a codicon — the Nerd Fonts block from EA60 to EC84 — so the
+plus of the tab bar, the close button of both rows, the menu button
+and the mark on the selected tab are drawn at one weight and one
+visual size.  The other families do not match it: the material design
+chevron is bold beside a codicon plus, and the octicon cross is half
+its size.  The close button of the two rows is the same glyph with the
+padding each row needs, and the plain candidates behind the nerd glyph
+stay distinct from button to button, because a terminal takes the last
+of them.
 
 Finding a nerd icon walks the table of its style — 6880 entries for the
 material design one — so an answer is kept per key and per kind of
@@ -72,13 +83,15 @@ writes those values back.  It keeps nothing for a mode that has
 borrowed already: =define-minor-mode= runs its body on every call, and a
 mode enabled twice would otherwise record the values it set itself.
 
-=custom-reevaluate-setting= was the restore before this, and it is the
-wrong tool twice over.  A plain =defvar= has no standard value, so it
-was set to nil — =tab-line-close-button= came back as nothing and the
-stock tab line lost its close button.  And a value the reader had set
-with =setq= was thrown away for whatever the custom file said.
+The values are kept rather than worked out again.
+=custom-reevaluate-setting= cannot do this job, for two reasons.  A
+plain =defvar= has no standard value for it to restore, so it sets the
+variable to nil: =tab-line-close-button= would come back as nothing
+and the stock tab line would lose its close button.  And it reads the
+custom file, so a value the reader set with =setq= would be thrown
+away for whatever that file says.
 
-Neither mode sets a button of Emacs any more.  The tab bar draws its
+Neither mode sets a button of Emacs.  The tab bar draws its
 own buttons from its format, and the tab line binds
 =tab-line-close-button= while it formats a tab.  A button settled at
 enable time is settled for one kind of display, and a daemon enables
@@ -110,10 +123,11 @@ where the mark is there.  The =none= another package sets —
 =auto-side-windows= hides the side panels of a frame this way — is not
 undone, and a row stays off a panel that wanted it off.
 
-=buffer-list-update-hook= was here before.  It runs on every
-=get-buffer-create=, =set-buffer= and =kill-buffer= — about twice per
-buffer operation — and each run walked the buffer lists of a window for
-a count that had not changed.
+=buffer-list-update-hook= covers all three of those cases and is the
+wrong hook for them.  It runs on every =get-buffer-create=,
+=set-buffer= and =kill-buffer= — about twice per buffer operation — and
+each run walks the buffer lists of a window for a count that has not
+changed.
 
 Turning the mode off takes the parameter off every window of every
 frame, and only where the mode had borrowed: a mode that was never on

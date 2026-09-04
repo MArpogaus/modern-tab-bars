@@ -41,6 +41,11 @@ the same in both; the rest differ, because the two rows name their tabs
 differently — the tab bar keys its icons on the name of a group, the
 tab line asks a function for the icon of a buffer.
 
+The buttons of the two rows are one family.  Every one of them leads
+with a codicon, so the new button, the close button of both rows, the
+menu button and the mark on the selected tab are drawn at one weight
+and one visual size.
+
 Icons come from [[https://github.com/rainstormstudio/nerd-icons.el][nerd-icons]] where it is installed.  A graphic frame
 shows the first glyph of a candidate list as it is — which fonts draw
 it is the frame's business, fallbacks included.  A terminal refuses a
@@ -122,20 +127,20 @@ images draws one column of a vertical line instead.
 
 *** The Tab Bar
 
-| Option                             | What it says                                  |
-|------------------------------------+-----------------------------------------------|
-| =modern-tab-bar-icons=             | the icon each group name shows, an alist       |
-| =modern-tab-bar-default-icon=      | the icon a group with no match shows           |
-| =modern-tab-bar-group-name-function= | rewrites the name of a group                 |
-| =modern-tab-bar-new-command=       | what the new button runs                       |
-| =modern-tab-bar-new-glyphs=        | the new button, best glyph first               |
-| =modern-tab-bar-close-glyphs=      | the close button, best glyph first             |
-| =modern-tab-bar-current-glyphs=    | the mark on the selected tab, best first       |
-| =modern-tab-bar-menu-glyphs=       | the menu button, best glyph first              |
-| =modern-tab-bar-format=            | what the bar shows, as =tab-bar-format= takes it |
+| Option                               | What it says                                     |
+|--------------------------------------+--------------------------------------------------|
+| =modern-tab-bar-icons=               | the icon each group name shows, an alist         |
+| =modern-tab-bar-default-icon=        | the icon a group with no match shows             |
+| =modern-tab-bar-group-name-function= | rewrites the name of a group                     |
+| =modern-tab-bar-new-command=         | what the new button runs                         |
+| =modern-tab-bar-new-glyphs=          | the new button, best glyph first                 |
+| =modern-tab-bar-close-glyphs=        | the close button, best glyph first               |
+| =modern-tab-bar-current-glyphs=      | the mark on the selected tab, best first         |
+| =modern-tab-bar-menu-glyphs=         | the menu button, best glyph first                |
+| =modern-tab-bar-format=              | what the bar shows, as =tab-bar-format= takes it |
 
-An icon is a string shown as it is, or a plist naming a nerd-icons
-glyph:
+An icon is a string shown as it is, a plist naming a nerd-icons glyph,
+or a function of no arguments that returns a string:
 
 #+begin_src emacs-lisp
   (setopt modern-tab-bar-icons
@@ -154,11 +159,14 @@ nerd-icons-insert= lists what there is.
 
 *** The Tab Line
 
-| Option                           | What it says                             |
-|----------------------------------+------------------------------------------|
-| =modern-tab-line-icon-function=  | the icon of a tab, called with its buffer |
-| =modern-tab-line-close-glyphs=   | the close button, best first              |
-| =modern-tab-line-auto-hide=      | whether a window with one buffer hides the row |
+| Option                          | What it says                                    |
+|---------------------------------+-------------------------------------------------|
+| =modern-tab-line-icon-function= | the icon of a tab, called with its buffer       |
+| =modern-tab-line-close-glyphs=  | the close button, best first                    |
+| =modern-tab-line-auto-hide=     | whether a window with one buffer hides the row  |
+
+The icon function is =modern-tab-line-file-icon= by default, which asks
+nerd-icons about the name of the buffer as though it were a file name.
 
 The close button buries the buffer where another window still shows
 it, kills it where none does, and deletes the window with its last tab.

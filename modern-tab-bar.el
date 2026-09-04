@@ -69,10 +69,12 @@ A colour name, or a face whose foreground is the colour."
 (defcustom modern-tab-bar-icons '(("HOME" :style "suc" :icon "custom-emacs"))
   "Alist of the icon each tab group shows.
 The car of an entry is a regular expression matched against the name of
-the group; the cdr is a string shown as it is, or a plist with `:style'
-and `:icon', which names a nerd-icons glyph.  The first entry that
-matches wins, and a group that matches none shows
-`modern-tab-bar-default-icon'."
+the group.  The cdr is one of three things: a string shown as it is, a
+plist with `:style' and `:icon' naming a nerd-icons glyph, or a
+function of no arguments that returns a string.  A function is called
+once per group name and the answer is kept, so a lookup that costs
+something belongs there.  The first entry that matches wins, and a
+group that matches none shows `modern-tab-bar-default-icon'."
   :type '(alist :key-type regexp
                 :value-type (choice string function
                                     (plist :key-type symbol
