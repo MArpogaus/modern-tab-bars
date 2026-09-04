@@ -135,6 +135,27 @@ planes 15 and 16."
       (<= #xF0000 char #xFFFFD)
       (<= #x100000 char #x10FFFD)))
 
+(defcustom modern-tab-terminal-glyphs nil
+  "Whether this terminal draws the glyphs a graphic frame draws.
+Emacs can ask a font what it holds and a terminal nothing: the terminal
+picks the font and draws the characters, and `char-displayable-p'
+answers for the coding system alone, so a glyph the font lacks arrives
+as an empty box instead of being refused.  The glyphs of a nerd font
+live in Unicode's private use areas, which no terminal font can be
+assumed to carry, so a terminal is given the plain candidates.
+
+Set this where the terminal does carry them.  It is a word from the
+reader and not a question Emacs can answer: the coding system is still
+asked, and a wrong answer here shows boxes where the icons belong."
+  :type 'boolean
+  ;; `custom-initialize-reset', which a `defcustom' takes by default,
+  ;; calls the `:set' function as the option is defined — and the
+  ;; forgetting it does is defined further down this file.  There is
+  ;; nothing drawn to forget at that moment anyway.
+  :initialize #'custom-initialize-default
+  :set #'modern-tab-set-and-forget
+  :group 'modern-tab)
+
 (defun modern-tab--encodable-p (string)
   "Return non-nil where a terminal can encode every character of STRING.
 Every character, and not the first one alone: a candidate is padded
@@ -142,10 +163,12 @@ with spaces, and asking about the first character asked about a space.
 `char-displayable-p' answers for the coding system — a UTF-8 terminal
 says yes to anything it can encode, box or not — so a glyph from a
 private use area is refused on top of it: that is where a nerd font
-keeps its own, and no terminal font can be assumed to carry them."
+keeps its own, and no terminal font can be assumed to carry them.
+`modern-tab-terminal-glyphs' is the reader saying that this one does."
   (seq-every-p (lambda (char)
                  (and (char-displayable-p char)
-                      (not (modern-tab--private-use-p char))))
+                      (or modern-tab-terminal-glyphs
+                          (not (modern-tab--private-use-p char)))))
                string))
 
 (defun modern-tab-glyph (&rest candidates)
@@ -153,7 +176,9 @@ keeps its own, and no terminal font can be assumed to carry them."
 A graphic frame shows the first one as it is: which fonts draw it is
 the frame's own business, fallbacks included.  A terminal gets the
 first candidate it can encode that names no private use glyph, and the
-last one where none passes — so keep a plain string there."
+last one where none passes — so keep a plain string there.  A terminal
+whose font carries the icons takes the first candidate like a graphic
+frame; see `modern-tab-terminal-glyphs'."
   (if (display-graphic-p)
       (car candidates)
     (or (seq-find (lambda (c) (and (stringp c) (not (string-empty-p c))

@@ -90,6 +90,24 @@ says yes to a character it shows as a box."
   (should-not (modern-tab--encodable-p "\uEA60"))
   (should (equal (modern-tab-glyph "\uEA60" "+") "+")))
 
+(ert-deftest modern-tab-test-a-trusted-terminal-draws-the-icons ()
+  "A terminal draws the icons where the reader says its font has them.
+The refusal above is a guess the package makes for a terminal it cannot
+ask; `modern-tab-terminal-glyphs' is the reader answering.  The coding
+system is still asked, so a candidate this terminal cannot encode is
+still refused."
+  (skip-unless (not (display-graphic-p)))
+  (let ((modern-tab-terminal-glyphs t))
+    (should (modern-tab--encodable-p "\uEA60"))
+    (should (equal (modern-tab-glyph "\uEA60" "+") "\uEA60"))
+    ;; the private use area is no longer a reason, the coding system is
+    (cl-letf (((symbol-function 'char-displayable-p)
+               (lambda (ch) (not (eq ch ?\uEA60)))))
+      (should (equal (modern-tab-glyph "\uEA60" "+") "+"))))
+  ;; and with the option off nothing changed
+  (let ((modern-tab-terminal-glyphs nil))
+    (should (equal (modern-tab-glyph "\uEA60" "+") "+"))))
+
 (ert-deftest modern-tab-test-a-glyph-is-judged-by-every-character ()
   "A candidate passes only where a terminal encodes all of it.
 The glyphs of the tab bar are padded with the spaces that hold them

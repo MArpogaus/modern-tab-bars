@@ -55,6 +55,20 @@ frame and a terminal frame at once.  A symbol a UTF-8 terminal can
 encode but its font has no glyph for still shows a box: name plain
 strings in the icon options there.
 
+That refusal is a guess about a terminal Emacs cannot ask.  A terminal
+picks the font and draws the characters itself, and =char-displayable-p=
+answers for the coding system alone, so a glyph the font lacks arrives
+as a box rather than being refused.  Where your terminal does carry the
+icon font, say so and it draws what a graphic frame draws:
+
+#+begin_src emacs-lisp
+  (setopt modern-tab-terminal-glyphs t)
+#+end_src
+
+The coding system is still asked, so a candidate the terminal cannot
+encode is still refused, and setting it back to nil brings the plain
+candidates straight back.
+
 ** Getting Started
 
 *** Installation
