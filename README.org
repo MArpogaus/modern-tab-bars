@@ -9,7 +9,7 @@
 [[https://github.com/MArpogaus/modern-tabs/actions/workflows/test.yml][https://img.shields.io/github/actions/workflow/status/MArpogaus/modern-tabs/test.yml.svg?branch=main&label=tests&style=flat-square]]
 [[https://linkedin.com/in/MArpogaus][https://img.shields.io/badge/-LinkedIn-black.svg?style=flat-square&logo=linkedin&colorB=555]]
 
-* Modern Tabbars :TOC_3_gh:noexport:
+* Modern Tabs :TOC_3_gh:noexport:
   - [[#about-the-project][About The Project]]
   - [[#getting-started][Getting Started]]
     - [[#installation][Installation]]
@@ -58,14 +58,14 @@ The package needs Emacs 29.1 or later and nothing else.  nerd-icons is
 optional: install it for the glyphs, or name plain strings in the icon
 options.
 
-The package is called =modern-tabs=, after its main file, and both modes
-are autoloaded from it:
+The repository is called =modern-tabs=; the main file, and with it the
+prefix of every symbol, is =modern-tab=.  Both modes are autoloaded:
 
 #+begin_src emacs-lisp
-  (use-package modern-tabs
+  (use-package modern-tab
     :vc (:url "https://github.com/MArpogaus/modern-tabs" :rev :newest)
-    :hook ((after-init . modern-tabs-bar-mode)
-           (after-init . modern-tabs-line-mode)))
+    :hook ((after-init . modern-tab-bar-mode)
+           (after-init . modern-tab-line-mode)))
 #+end_src
 
 Drop either hook to run one mode alone.  The rows themselves stay
@@ -74,13 +74,13 @@ them.
 
 *** Usage
 
-=M-x modern-tabs-bar-mode= dresses the tab bar.  Turn on =tab-bar-mode=
+=M-x modern-tab-bar-mode= dresses the tab bar.  Turn on =tab-bar-mode=
 to see it.
 
-=M-x modern-tabs-line-mode= dresses the tab line.  Turn on
+=M-x modern-tab-line-mode= dresses the tab line.  Turn on
 =tab-line-mode= or =global-tab-line-mode= to see it — the row is yours,
 and this mode neither enables nor disables it.  A window showing one
-buffer hides its tab line; set =modern-tabs-line-auto-hide= to nil to
+buffer hides its tab line; set =modern-tab-line-auto-hide= to nil to
 keep the row.
 
 Each mode also sets what Emacs draws its row with — the tab bar's
@@ -89,7 +89,7 @@ of its buttons show — and gives every one of them back when it is
 turned off.
 
 On a terminal the tab bar shows no menu button, whatever
-=modern-tabs-bar-format= says.  See [[file:docs/implementation.org][docs/implementation.org]] for the
+=modern-tab-bar-format= says.  See [[file:docs/implementation.org][docs/implementation.org]] for the
 measurement behind that.
 
 ** Customization
@@ -99,20 +99,20 @@ measurement behind that.
 The indicator is the vertical bar beside a tab.  Each mode names five
 options for it: a width and a colour for the selected tab, a width and
 a colour for the others, and one height for both.  The two modes use
-the same names, with =modern-tabs-bar-= or =modern-tabs-line-= in front.
+the same names, with =modern-tab-bar-= or =modern-tab-line-= in front.
 
 | Option                                      | Default              |
 |---------------------------------------------+----------------------|
-| =modern-tabs-bar-active-indicator-width=     | ~4~, in pixels       |
-| =modern-tabs-bar-inactive-indicator-width=   | ~2~, in pixels       |
-| =modern-tabs-bar-active-indicator-color=     | ~mode-line-emphasis~ |
-| =modern-tabs-bar-inactive-indicator-color=   | ~shadow~             |
-| =modern-tabs-bar-indicator-height=           | ~25~, in pixels      |
-| =modern-tabs-line-active-indicator-width=    | ~3~, in pixels       |
-| =modern-tabs-line-inactive-indicator-width=  | ~0~, in pixels       |
-| =modern-tabs-line-active-indicator-color=    | ~mode-line-emphasis~ |
-| =modern-tabs-line-inactive-indicator-color=  | ~shadow~             |
-| =modern-tabs-line-indicator-height=          | ~20~, in pixels      |
+| =modern-tab-bar-active-indicator-width=     | ~4~, in pixels       |
+| =modern-tab-bar-inactive-indicator-width=   | ~2~, in pixels       |
+| =modern-tab-bar-active-indicator-color=     | ~mode-line-emphasis~ |
+| =modern-tab-bar-inactive-indicator-color=   | ~shadow~             |
+| =modern-tab-bar-indicator-height=           | ~25~, in pixels      |
+| =modern-tab-line-active-indicator-width=    | ~3~, in pixels       |
+| =modern-tab-line-inactive-indicator-width=  | ~0~, in pixels       |
+| =modern-tab-line-active-indicator-color=    | ~mode-line-emphasis~ |
+| =modern-tab-line-inactive-indicator-color=  | ~shadow~             |
+| =modern-tab-line-indicator-height=          | ~20~, in pixels      |
 
 A width of nil or zero draws no indicator at all.  A colour is a colour
 name or a face, whose foreground is then the colour.  A frame without
@@ -122,21 +122,21 @@ images draws one column of a vertical line instead.
 
 | Option                             | What it says                                  |
 |------------------------------------+-----------------------------------------------|
-| =modern-tabs-bar-icons=             | the icon each group name shows, an alist       |
-| =modern-tabs-bar-default-icon=      | the icon a group with no match shows           |
-| =modern-tabs-bar-group-name-function= | rewrites the name of a group                 |
-| =modern-tabs-bar-new-command=       | what the new button runs                       |
-| =modern-tabs-bar-new-glyphs=        | the new button, best glyph first               |
-| =modern-tabs-bar-close-glyphs=      | the close button, best glyph first             |
-| =modern-tabs-bar-current-glyphs=    | the mark on the selected tab, best first       |
-| =modern-tabs-bar-menu-glyphs=       | the menu button, best glyph first              |
-| =modern-tabs-bar-format=            | what the bar shows, as =tab-bar-format= takes it |
+| =modern-tab-bar-icons=             | the icon each group name shows, an alist       |
+| =modern-tab-bar-default-icon=      | the icon a group with no match shows           |
+| =modern-tab-bar-group-name-function= | rewrites the name of a group                 |
+| =modern-tab-bar-new-command=       | what the new button runs                       |
+| =modern-tab-bar-new-glyphs=        | the new button, best glyph first               |
+| =modern-tab-bar-close-glyphs=      | the close button, best glyph first             |
+| =modern-tab-bar-current-glyphs=    | the mark on the selected tab, best first       |
+| =modern-tab-bar-menu-glyphs=       | the menu button, best glyph first              |
+| =modern-tab-bar-format=            | what the bar shows, as =tab-bar-format= takes it |
 
 An icon is a string shown as it is, or a plist naming a nerd-icons
 glyph:
 
 #+begin_src emacs-lisp
-  (setopt modern-tabs-bar-icons
+  (setopt modern-tab-bar-icons
           '(("HOME"      :style "suc" :icon "custom-emacs")
             ("^\\[P\\]"  :style "oct" :icon "repo")
             ("config"    :style "md"  :icon "cog")))
@@ -154,26 +154,26 @@ nerd-icons-insert= lists what there is.
 
 | Option                           | What it says                             |
 |----------------------------------+------------------------------------------|
-| =modern-tabs-line-icon-function=  | the icon of a tab, called with its buffer |
-| =modern-tabs-line-close-glyphs=   | the close button, best first              |
-| =modern-tabs-line-auto-hide=      | whether a window with one buffer hides the row |
+| =modern-tab-line-icon-function=  | the icon of a tab, called with its buffer |
+| =modern-tab-line-close-glyphs=   | the close button, best first              |
+| =modern-tab-line-auto-hide=      | whether a window with one buffer hides the row |
 
 The close button buries the buffer where another window still shows
 it, kills it where none does, and deletes the window with its last tab.
-=modern-tabs-line-close-tab= is that command, should you want it on a
+=modern-tab-line-close-tab= is that command, should you want it on a
 key.
 
 An icon function is called with a buffer and returns a string, or nil
-for no icon.  =modern-tabs-glyph= names a preferred glyph and a
-fallback, and =modern-tabs-icon-for= keeps the answer — it calls a
+for no icon.  =modern-tab-glyph= names a preferred glyph and a
+fallback, and =modern-tab-icon-for= keeps the answer — it calls a
 function only where it has none yet:
 
 #+begin_src emacs-lisp
   (defun my/tab-icon (buffer)
-    (modern-tabs-icon-for (buffer-name buffer)
+    (modern-tab-icon-for (buffer-name buffer)
                          (if (buffer-modified-p buffer) "● " "  ")))
 
-  (setopt modern-tabs-line-icon-function #'my/tab-icon)
+  (setopt modern-tab-line-icon-function #'my/tab-icon)
 #+end_src
 
 ** Development

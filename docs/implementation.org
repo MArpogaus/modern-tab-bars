@@ -1,9 +1,9 @@
-#+TITLE: How modern-tabs is built
+#+TITLE: How modern-tab is built
 #+OPTIONS: toc:nil
 
-Three files.  =modern-tabs.el= holds what both modes draw with,
-=modern-tabs-bar.el= dresses the tab bar and =modern-tabs-line.el=
-dresses the tab line.  The package prefix is =modern-tabs-= for all
+Three files.  =modern-tab.el= holds what both modes draw with,
+=modern-tab-bar.el= dresses the tab bar and =modern-tab-line.el=
+dresses the tab line.  The package prefix is =modern-tab-= for all
 three: package-lint takes the prefix from the main file's name, and
 both mode names live under it.
 
@@ -26,7 +26,7 @@ other.
 
 * Icons, and what a frame can draw
 
-=modern-tabs-glyph= takes candidates, best first.  A graphic frame
+=modern-tab-glyph= takes candidates, best first.  A graphic frame
 shows the first one as it is: which fonts draw a character — the face's
 own, or a fallback the fontset finds — is the frame's business, and a
 version that refused fallback fonts refused the reader's =✕= and every
@@ -56,8 +56,8 @@ parameter of every window, which is where a row already drawn is kept.
 * What a mode gives back
 
 Both modes set variables that belong to Emacs, and both put back what
-they found.  =modern-tabs-borrow= keeps the value of each variable under
-the name of the mode before the mode sets it, and =modern-tabs-give-back=
+they found.  =modern-tab-borrow= keeps the value of each variable under
+the name of the mode before the mode sets it, and =modern-tab-give-back=
 writes those values back.  It keeps nothing for a mode that has
 borrowed already: =define-minor-mode= runs its body on every call, and a
 mode enabled twice would otherwise record the values it set itself.
