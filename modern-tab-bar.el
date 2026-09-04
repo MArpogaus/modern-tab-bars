@@ -159,14 +159,25 @@ on.  See `modern-tab-bar-new-button' for why it is not settled once."
               'close-tab t
               'help-echo "Click to close tab"))
 
+(defun modern-tab-bar--button-face ()
+  "Return the face of the bar's buttons: colours, not a face.
+A string with no face of its own wears the face of the row, and a
+theme can leave that without contrast — measured with doom-one-light,
+the row was #f0f0f0 for its foreground and its background alike, and
+the buttons were no pixels at all.  Naming `default' instead was wrong
+in the other direction: a face named on a string is resolved in the
+buffer redisplay is drawing for, `mixed-pitch-mode' remaps `default'
+buffer-locally, and the frame's bar came out in the font of whichever
+buffer was redisplayed last.  So the button carries the global colours
+of `default' as absolute values, which no buffer can remap and every
+theme keeps readable."
+  (list :foreground (face-foreground 'default nil)))
+
 (defun modern-tab-bar-format-new-button ()
   "Return the tab bar button that runs `modern-tab-bar-new-command'.
-A `tab-bar-format' can name this function.  The button wears the face
-of the row it sits in, which is the look a bar of this package keeps:
-the menu button beside it carries `default' because a theme can leave
-the row's face without contrast, and an unreadable word is worse than
-a blended one."
-  `((add-tab menu-item ,(modern-tab-bar-new-button)
+A `tab-bar-format' can name this function."
+  `((add-tab menu-item ,(propertize (modern-tab-bar-new-button)
+                                    'face (modern-tab-bar--button-face))
              ,modern-tab-bar-new-command
              :help "New")))
 
@@ -219,7 +230,7 @@ each of them."
                    'menu-button
                    (lambda () (apply #'modern-tab-glyph
                                      modern-tab-bar-menu-glyphs)))
-                  'face 'default)
+                  'face (modern-tab-bar--button-face))
                 tab-bar-menu-bar :help "Menu bar"))))
 
 (defun modern-tab-bar--group-icon (name)
