@@ -45,11 +45,18 @@
 ;; package's main one, which is why it carries the name the whole
 ;; package is prefixed with: package-lint takes that prefix from the
 ;; main file's name, and `modern-tab-bar-mode' and
-;; `modern-tab-line-mode' both live under `modern-tab-'.  The package
-;; is entered by `modern-tabs.el', which carries the version as well:
-;; elpaca treats the file the id names as the package main, and reads
-;; the version from there, while package-lint reads this file, so both
-;; carry it and a release bumps both.
+;; `modern-tab-line-mode' both live under `modern-tab-'.  It carries
+;; the version and the dependency line for the same reason, and elpaca
+;; reads them here too, because the id it is installed by is the name
+;; of this file.  The repository is `modern-tabs', after the two rows
+;; of tabs Emacs has; a recipe names package and repository apart.
+;;
+;; Both modes are autoloaded, so nothing here needs requiring:
+;;
+;;   (use-package modern-tab
+;;     :vc (:url "https://github.com/MArpogaus/modern-tabs" :rev :newest)
+;;     :hook ((after-init . modern-tab-bar-mode)
+;;            (after-init . modern-tab-line-mode)))
 ;;
 ;; Icons come from nerd-icons where it is installed.  A graphic frame
 ;; shows the first glyph of a candidate list as it is — which fonts

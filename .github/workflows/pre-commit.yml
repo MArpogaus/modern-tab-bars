@@ -39,6 +39,6 @@ jobs:
     # formatter writes a plain scalar, and a quoted one fails that hook.
     - env:
         LOCAL_REPO: ${{ github.workspace }}
-        RECIPE: (modern-tabs :fetcher github :repo "MArpogaus/modern-tabs")
+        RECIPE: (modern-tab :fetcher github :repo "MArpogaus/modern-tabs")
         EXIST_OK: true
       run: make -C ~/melpazoid

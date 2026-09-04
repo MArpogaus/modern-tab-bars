@@ -49,7 +49,7 @@ compile: $(STAMP)
 	  -f batch-byte-compile $(SRC) $(TEST)
 	@rm -f ./*.elc test/*.elc
 
-# One package, four files: package-lint reads the headers of the main
+# One package, three files: package-lint reads the headers of the main
 # file for all of them, as MELPA does.
 lint: $(STAMP)
 	@$(BATCH) --eval '(setq package-lint-main-file "modern-tab.el")' \

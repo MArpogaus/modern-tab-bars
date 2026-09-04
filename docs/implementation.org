@@ -1,19 +1,21 @@
 #+TITLE: How modern-tab is built
 #+OPTIONS: toc:nil
 
-Four files.  =modern-tab.el= holds what both modes draw with,
-=modern-tab-bar.el= dresses the tab bar and =modern-tab-line.el=
-dresses the tab line; =modern-tabs.el= is the entry the package is
-installed by, and its body loads the two modes.
+Three files.  =modern-tab.el= holds what both modes draw with and is
+the main one; =modern-tab-bar.el= dresses the tab bar and
+=modern-tab-line.el= dresses the tab line.
 
-The id and the prefix differ.  The package is installed as
-=modern-tabs=, the name of the repository, and elpaca treats the file
-the id names as the package main — which is why =modern-tabs.el=
-carries the version.  The symbols are prefixed =modern-tab-=, after
-=modern-tab.el=: package-lint takes the prefix from the main file it
-is pointed at, and both mode names live under it.  That file also
-keeps the version and the dependency line, because package-lint reads
-its headers only there, so a release bumps the version in both.
+The package is =modern-tab=, after that main file, and every symbol
+carries the same prefix: package-lint takes the prefix from the main
+file, elpaca reads the version and the dependency line from the file
+the id names, and both are that one file.  The repository is named
+=modern-tabs= because it holds the two rows of tabs Emacs has; a
+recipe names the two separately, so the difference costs nothing.
+
+There is no entry file.  Both modes are autoloaded, so a reader who
+installs the package can name them in a hook without requiring
+anything, and the file whose only body was two =require= forms is
+gone.
 
 * The indicator
 
