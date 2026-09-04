@@ -500,13 +500,30 @@ The row is the reader's, the way the tab bar is with
   "With `modern-tab-line-auto-hide' nil no window parameter is touched."
   (let ((modern-tab-line-auto-hide nil))
     (set-window-parameter nil 'tab-line-format nil)
+    (set-window-parameter nil 'modern-tab-line-hide nil)
     (modern-tab-line-update-window)
     (should-not (window-parameter nil 'tab-line-format)))
   ;; And with it on, a window showing one buffer hides the row.
   (let ((modern-tab-line-auto-hide t))
     (modern-tab-line-update-window)
     (should (eq (window-parameter nil 'tab-line-format) 'none))
-    (set-window-parameter nil 'tab-line-format nil)))
+    (set-window-parameter nil 'tab-line-format nil)
+    (set-window-parameter nil 'modern-tab-line-hide nil)))
+
+(ert-deftest modern-tab-line-test-a-hiding-of-another-stays ()
+  "A `none' this package did not set is not undone, and not re-decided.
+`auto-side-windows' hides the side panels of a frame with a `none' of
+its own; the row must not come back on them, at a decision, at the
+teardown of the mode, or anywhere."
+  (set-window-parameter nil 'modern-tab-line-hide nil)
+  (set-window-parameter nil 'tab-line-format 'none)
+  (let ((modern-tab-line-auto-hide t))
+    (modern-tab-line-update-window)
+    (should (eq (window-parameter nil 'tab-line-format) 'none))
+    (modern-tab-line-mode 1)
+    (modern-tab-line-mode -1)
+    (should (eq (window-parameter nil 'tab-line-format) 'none)))
+  (set-window-parameter nil 'tab-line-format nil))
 
 (defvar modern-tab-test--borrowed-var 'reader
   "A variable for the borrow tests to keep and give back.")

@@ -101,6 +101,13 @@ nothing about a window changes, so no window change function runs.  It
 runs before the buffer goes, which is why the count discounts the tab
 of the buffer that is going.
 
+A window is re-decided only where the hiding was this package's own.
+The =none= it sets leaves the =modern-tab-line-hide= parameter behind
+as the mark of its own, and a later decision touches a window only
+where the mark is there.  The =none= another package sets —
+=auto-side-windows= hides the side panels of a frame this way — is not
+undone, and a row stays off a panel that wanted it off.
+
 =buffer-list-update-hook= was here before.  It runs on every
 =get-buffer-create=, =set-buffer= and =kill-buffer= — about twice per
 buffer operation — and each run walked the buffer lists of a window for

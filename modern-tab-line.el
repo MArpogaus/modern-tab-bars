@@ -220,16 +220,23 @@ where none does."
 
 (defun modern-tab-line-update-window (&optional window)
   "Show the tab line in WINDOW only where it has tabs.
-WINDOW is the selected window by default.  A window whose parameter
-says something else was set by somebody else, and it is left as it is:
-this hides rows, it does not take the row over."
-  (let ((window (or window (selected-window))))
+WINDOW is the selected window by default.  A window is decided here
+only where its parameter is still nil, or where the `none' there is
+this package's own doing: the hiding leaves the `modern-tab-line-hide'
+parameter behind as the mark of its own.  A `none' another package set
+— `auto-side-windows' hides the side panels this way — is not this
+package's to undo: this hides rows, it does not take the row over."
+  (let* ((window (or window (selected-window)))
+         (param (window-parameter window 'tab-line-format)))
     (when (and modern-tab-line-auto-hide
-               (memq (window-parameter window 'tab-line-format) '(nil none)))
-      (set-window-parameter
-       window 'tab-line-format
-       (if (with-selected-window window (modern-tab-line--several-p))
-           nil 'none)))))
+               (or (null param)
+                   (and (eq param 'none)
+                        (window-parameter window 'modern-tab-line-hide))))
+      (let ((hide (not (with-selected-window window
+                         (modern-tab-line--several-p)))))
+        (set-window-parameter
+         window 'tab-line-format (if hide 'none nil))
+        (set-window-parameter window 'modern-tab-line-hide hide)))))
 
 (defun modern-tab-line-update-frame (&rest _)
   "Ask every window of every frame whether to show its tab line.
@@ -250,11 +257,17 @@ The hook runs before the buffer goes, so its own tab is discounted."
 
 (defun modern-tab-line--show-everywhere ()
   "Take the hiding off every window that this package hid.
-A window whose parameter says something else was set by somebody else,
-and it is left alone."
+The `modern-tab-line-hide' parameter marks the windows whose `none'
+this package set, and the parameter has to say `none' still: where
+another value took its place, the decision was somebody else's.  A
+hiding another package left, such as the `none' `auto-side-windows'
+puts on a side panel, is left alone."
   (walk-windows (lambda (window)
-                  (when (eq (window-parameter window 'tab-line-format) 'none)
-                    (set-window-parameter window 'tab-line-format nil)))
+                  (when (and (eq (window-parameter window 'tab-line-format)
+                                 'none)
+                             (window-parameter window 'modern-tab-line-hide))
+                    (set-window-parameter window 'tab-line-format nil)
+                    (set-window-parameter window 'modern-tab-line-hide nil)))
                 'no-mini t))
 
 ;;;; The mode

@@ -190,7 +190,7 @@ function only where it has none yet:
 
 Plain =make= runs the checks in that order, exactly as the CI does.
 The indent, checkdoc and complexity checks are pre-commit hooks of
-[[https://github.com/MArpogaus/elisp-complexity][elisp-complexity]]: indent gives Lisp the indentation =indent-region=
+[[https://github.com/MArpogaus/emacs-pre-commit-hooks][emacs-pre-commit-hooks]]: indent gives Lisp the indentation =indent-region=
 gives it, each file loaded first, checkdoc reads the documentation
 strings, and complexity stops a commit where a function costs a reader
 more than fifteen.  Check-declare and melpazoid join them before a
