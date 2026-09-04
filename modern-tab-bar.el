@@ -224,7 +224,7 @@ each of them."
     `((menu-bar menu-item
                 ,(propertize
                   (modern-tab--button 'menu-button
-                                     modern-tab-bar-menu-glyphs)
+                                      modern-tab-bar-menu-glyphs)
                   'face (modern-tab-bar--button-face))
                 tab-bar-menu-bar :help "Menu bar"))))
 
@@ -273,7 +273,7 @@ This is what `tab-bar-tab-name-format-function' is set to."
     (propertize
      (concat (if selected
                  (modern-tab--button 'current-glyph
-                                    modern-tab-bar-current-glyphs)
+                                     modern-tab-bar-current-glyphs)
                ;; As wide as the mark, so the names of the tabs line
                ;; up: every candidate of `modern-tab-bar-current-glyphs'
                ;; is two columns, the last one two spaces.
@@ -304,10 +304,10 @@ This is what `tab-bar-tab-name-format-function' is set to."
   ;; `modern-tab-bar--menu-bar': settled here they would be settled for
   ;; one display, and for the glyphs the options held at the enable.
   (modern-tab--borrow 'modern-tab-bar-mode
-                     'tab-bar-format 'tab-bar-separator
-                     'tab-bar-auto-width
-                     'tab-bar-tab-group-format-function
-                     'tab-bar-tab-name-format-function)
+                      'tab-bar-format 'tab-bar-separator
+                      'tab-bar-auto-width
+                      'tab-bar-tab-group-format-function
+                      'tab-bar-tab-name-format-function)
   (setq tab-bar-format modern-tab-bar-format
         tab-bar-separator ""
         tab-bar-auto-width nil

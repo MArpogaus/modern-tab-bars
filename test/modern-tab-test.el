@@ -621,10 +621,10 @@ itself and give those back instead of the reader's."
   (let ((modern-tab--borrowed nil)
         (modern-tab-test--borrowed-var 'reader))
     (should (modern-tab--borrow 'modern-tab-test-mode
-                               'modern-tab-test--borrowed-var))
+                                'modern-tab-test--borrowed-var))
     (setq modern-tab-test--borrowed-var 'mine)
     (should-not (modern-tab--borrow 'modern-tab-test-mode
-                                   'modern-tab-test--borrowed-var))
+                                    'modern-tab-test--borrowed-var))
     (should (modern-tab--give-back 'modern-tab-test-mode))
     (should (eq modern-tab-test--borrowed-var 'reader))
     ;; and a mode that borrowed nothing gives nothing back: its

@@ -132,7 +132,7 @@ was settled for the display the enable happened on — and a daemon
 enables its modes with no frame at all, where the answer is a
 terminal's."
   (propertize (modern-tab--button 'line-close-button
-                                 modern-tab-line-close-glyphs)
+                                  modern-tab-line-close-glyphs)
               'keymap tab-line-tab-close-map
               'mouse-face 'tab-line-close-highlight
               'help-echo "Click to close tab"))
@@ -284,12 +284,12 @@ puts on a side panel, is left alone."
   (add-hook 'window-configuration-change-hook #'modern-tab-line-update-frame)
   (add-hook 'kill-buffer-hook #'modern-tab-line--buffer-killed)
   (modern-tab--borrow 'modern-tab-line-mode
-                     'tab-line-tab-name-function
-                     'tab-line-tab-name-format-function
-                     'tab-line-close-tab-function
-                     'tab-line-separator
-                     'tab-line-new-button-show
-                     'tab-line-close-button-show)
+                      'tab-line-tab-name-function
+                      'tab-line-tab-name-format-function
+                      'tab-line-close-tab-function
+                      'tab-line-separator
+                      'tab-line-new-button-show
+                      'tab-line-close-button-show)
   (setq tab-line-tab-name-function #'modern-tab-line-tab-name
         tab-line-tab-name-format-function #'modern-tab-line-tab-format
         tab-line-close-tab-function #'modern-tab-line-close-tab
