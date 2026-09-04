@@ -222,6 +222,25 @@ the change."
       (should-not (string-suffix-p "X" (substring-no-properties
                                         (modern-tab-bar-name-format tab 1)))))))
 
+(ert-deftest modern-tab-bar-test-a-tab-is-as-wide-as-the-selected-one ()
+  "The mark on the selected tab is two columns, and so is its absence.
+Every candidate of `modern-tab-bar-current-glyphs' is two columns wide
+— the last one is two spaces — so a tab that carries no mark is padded
+to the same width.  With one space there the names of the tabs were a
+column out of line."
+  (let ((modern-tab-bar-current-glyphs '("> "))
+        (tab-bar-tab-hints nil)
+        (tab-bar-close-button-show nil))
+    (modern-tab-forget)
+    (let ((selected (substring-no-properties
+                     (modern-tab-bar-name-format
+                      '(current-tab (name . "a")) 1)))
+          (other (substring-no-properties
+                  (modern-tab-bar-name-format '(tab (name . "a")) 2))))
+      (should (equal selected "> a "))
+      (should (equal other "  a "))
+      (should (= (string-width selected) (string-width other))))))
+
 (ert-deftest modern-tab-bar-test-hints-show-the-number ()
   "A tab shows its index where `tab-bar-tab-hints' asks for it."
   (let ((tab-bar-close-button-show nil)

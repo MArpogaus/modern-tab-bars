@@ -283,7 +283,10 @@ This is what `tab-bar-tab-name-format-function' is set to."
                   (lambda ()
                     (apply #'modern-tab-glyph
                            modern-tab-bar-current-glyphs)))
-               " ")
+               ;; As wide as the mark, so the names of the tabs line
+               ;; up: every candidate of `modern-tab-bar-current-glyphs'
+               ;; is two columns, the last one two spaces.
+               "  ")
              (if tab-bar-tab-hints (format "%d " index) "")
              (alist-get 'name tab)
              ;; `tab-bar-close-button-show' is four-valued, and reading
