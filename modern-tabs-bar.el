@@ -1,11 +1,11 @@
-;;; modern-tab-bar.el --- A modern look for the tab bar -*- lexical-binding: t; -*-
+;;; modern-tabs-bar.el --- A modern look for the tab bar -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2026 Marcel Arpogaus
 
 ;; Author: Marcel Arpogaus <znepry.necbtnhf@tznvy.pbz>
 ;; Assisted-by: Claude:claude-opus-5
 ;; Keywords: convenience, tabs
-;; URL: https://github.com/MArpogaus/modern-tab-bars
+;; URL: https://github.com/MArpogaus/modern-tabs
 
 ;; This file is not part of GNU Emacs.
 
@@ -24,153 +24,149 @@
 
 ;;; Commentary:
 
-;; `modern-tab-bar-mode' gives the tab bar a bar beside the selected tab
+;; `modern-tabs-bar-mode' gives the tab bar a bar beside the selected tab
 ;; group, an icon for each group, and a new button and a close button
 ;; whose glyphs are the best ones the frame can draw.  Every part of the
 ;; look is an option; the indicator options match those of
-;; `modern-tab-line-mode' name for name.
+;; `modern-tabs-line-mode' name for name.
 
 ;;; Code:
 
 (require 'tab-bar)
-(require 'modern-tab)
+(require 'modern-tabs)
 
-(defgroup modern-tab-bar nil
+(defgroup modern-tabs-bar nil
   "A modern look for the tab bar."
-  :group 'modern-tab
-  :prefix "modern-tab-bar-")
+  :group 'modern-tabs
+  :prefix "modern-tabs-bar-")
 
 ;;;; Customization
 
-(defcustom modern-tab-bar-indicator-height 25
+(defcustom modern-tabs-bar-indicator-height 25
   "Height of the bar beside a tab group, in pixels."
   :type 'natnum)
 
-(defcustom modern-tab-bar-active-indicator-width 4
+(defcustom modern-tabs-bar-active-indicator-width 4
   "Width of the bar beside the selected tab group, in pixels.
 Nil or zero draws no bar at all."
   :type '(choice natnum (const :tag "None" nil)))
 
-(defcustom modern-tab-bar-inactive-indicator-width 2
+(defcustom modern-tabs-bar-inactive-indicator-width 2
   "Width of the bar beside a tab group that is not selected, in pixels.
 Nil or zero draws no bar at all."
   :type '(choice natnum (const :tag "None" nil)))
 
-(defcustom modern-tab-bar-active-indicator-color 'mode-line-emphasis
+(defcustom modern-tabs-bar-active-indicator-color 'mode-line-emphasis
   "Colour of the bar beside the selected tab group.
 A colour name, or a face whose foreground is the colour."
   :type '(choice color face (const :tag "None" nil)))
 
-(defcustom modern-tab-bar-inactive-indicator-color 'shadow
+(defcustom modern-tabs-bar-inactive-indicator-color 'shadow
   "Colour of the bar beside a tab group that is not selected.
 A colour name, or a face whose foreground is the colour."
   :type '(choice color face (const :tag "None" nil)))
 
-(defcustom modern-tab-bar-icons '(("HOME" :style "suc" :icon "custom-emacs"))
+(defcustom modern-tabs-bar-icons '(("HOME" :style "suc" :icon "custom-emacs"))
   "Alist of the icon each tab group shows.
 The car of an entry is a regular expression matched against the name of
 the group; the cdr is a string shown as it is, or a plist with `:style'
 and `:icon', which names a nerd-icons glyph.  The first entry that
 matches wins, and a group that matches none shows
-`modern-tab-bar-default-icon'."
+`modern-tabs-bar-default-icon'."
   :type '(alist :key-type regexp
                 :value-type (choice string function
                                     (plist :key-type symbol
                                            :value-type string)))
-  :set #'modern-tab-set-and-forget)
+  :set #'modern-tabs-set-and-forget)
 
-(defcustom modern-tab-bar-default-icon '(:style "oct" :icon "dot_fill")
+(defcustom modern-tabs-bar-default-icon '(:style "oct" :icon "dot_fill")
   "Icon shown for a tab group that matches no entry of the alist.
-See `modern-tab-bar-icons' for the values this takes."
+See `modern-tabs-bar-icons' for the values this takes."
   :type '(choice string function (plist :key-type symbol :value-type string))
-  :set #'modern-tab-set-and-forget)
+  :set #'modern-tabs-set-and-forget)
 
-(defcustom modern-tab-bar-group-name-function nil
+(defcustom modern-tabs-bar-group-name-function nil
   "Function that returns the name to show for a tab group.
 It is called with the name of the group and returns the string that
 goes onto the tab bar.  Nil shows the name as it is."
   :type '(choice (const :tag "The name as it is" nil) function))
 
-(defcustom modern-tab-bar-new-command #'tab-bar-new-tab
+(defcustom modern-tabs-bar-new-command #'tab-bar-new-tab
   "Command the new button of the tab bar runs."
   :type 'function)
 
-(defcustom modern-tab-bar-new-glyphs '("  " " + ")
+(defcustom modern-tabs-bar-new-glyphs '("  " " + ")
   "Glyphs of the button that makes a tab, best first.
-The first one the frame can draw wins, so keep a plain string last.
-`define-icon' was here before, and it asks `char-displayable-p', which
-a UTF-8 terminal answers with yes for any character it can encode: the
-button was a hex box there rather than the plain text."
+A graphic frame shows the first one; a terminal takes the first it can
+encode that is no private use glyph, so keep a plain string last."
   :type '(repeat string)
-  :set #'modern-tab-set-and-forget)
+  :set #'modern-tabs-set-and-forget)
 
-(defcustom modern-tab-bar-close-glyphs '(" ✕ " " × " " x ")
+(defcustom modern-tabs-bar-close-glyphs '(" ✕ " " × " " x ")
   "Glyphs of the close button, best first.
-The first one the frame can draw *in the font of the row* wins, so
-keep a plain character last.  `✕' has no glyph in most programming
-fonts and a fallback font drew it in another weight and another
-width; `×' is in almost all of them."
+A graphic frame shows the first one; a terminal takes the first it can
+encode that is no private use glyph, so keep a plain character last."
   :type '(repeat string)
-  :set #'modern-tab-set-and-forget)
+  :set #'modern-tabs-set-and-forget)
 
-(defcustom modern-tab-bar-menu-glyphs '("󰍜 " "≡ " " Menu ")
+(defcustom modern-tabs-bar-menu-glyphs '("󰍜 " "≡ " " Menu ")
   "Glyphs of the menu button, best first.
-The first one the frame can draw wins, so keep a plain string last."
+A graphic frame shows the first one; a terminal takes the first it can
+encode that is no private use glyph, so keep a plain string last."
   :type '(repeat string)
-  :set #'modern-tab-set-and-forget)
+  :set #'modern-tabs-set-and-forget)
 
-(defcustom modern-tab-bar-current-glyphs '("󰅂 " "› " "  ")
+(defcustom modern-tabs-bar-current-glyphs '("󰅂 " "› " "  ")
   "Glyphs that mark the selected tab, best first.
-The first one the frame can draw wins, so keep a plain character last.
-A space is drawable everywhere, so a space among the candidates ends
-the search: two of them are the last resort here, and they are two
-columns wide, which is what the glyphs before them are."
+A graphic frame shows the first one; a terminal takes the first it can
+encode that is no private use glyph.  The last resort here is two
+spaces, as wide as the glyphs before them."
   :type '(repeat string)
-  :set #'modern-tab-set-and-forget)
+  :set #'modern-tabs-set-and-forget)
 
-(defcustom modern-tab-bar-format
+(defcustom modern-tabs-bar-format
   '(tab-bar-format-tabs-groups
-    modern-tab-bar-format-new-button
+    modern-tabs-bar-format-new-button
     tab-bar-format-align-right
     tab-bar-format-global
-    modern-tab-bar--thin-spacer
-    modern-tab-bar--menu-bar
-    modern-tab-bar--wide-spacer)
+    modern-tabs-bar--thin-spacer
+    modern-tabs-bar--menu-bar
+    modern-tabs-bar--wide-spacer)
   "What the tab bar shows, as `tab-bar-format' takes it."
   :type 'hook)
 
 ;;;; The parts of the bar
 
-(defun modern-tab-bar-new-button ()
+(defun modern-tabs-bar-new-button ()
   "Return the string of the new button, drawn for this display.
-Per redisplay and not once at enable: `modern-tab-icon-for' keeps the
+Per redisplay and not once at enable: `modern-tabs-icon-for' keeps the
 answer per display, so a daemon serving a graphic frame and a terminal
 frame gives each the glyph it can draw, and a reader who customizes
-`modern-tab-bar-new-glyphs' sees the new one at the next redisplay."
-  (modern-tab-icon-for 'new-button
+`modern-tabs-bar-new-glyphs' sees the new one at the next redisplay."
+  (modern-tabs-icon-for 'new-button
                        (lambda ()
-                         (apply #'modern-tab-glyph
-                                modern-tab-bar-new-glyphs))))
+                         (apply #'modern-tabs-glyph
+                                modern-tabs-bar-new-glyphs))))
 
-(defun modern-tab-bar-close-button ()
+(defun modern-tabs-bar-close-button ()
   "Return the string of the close button, drawn for this display.
 The `close-tab' property is what the tab bar dispatches a click on it
-on.  See `modern-tab-bar-new-button' for why it is not settled once."
-  (propertize (modern-tab-icon-for 'close-button
+on.  See `modern-tabs-bar-new-button' for why it is not settled once."
+  (propertize (modern-tabs-icon-for 'close-button
                                    (lambda ()
-                                     (apply #'modern-tab-glyph
-                                            modern-tab-bar-close-glyphs)))
+                                     (apply #'modern-tabs-glyph
+                                            modern-tabs-bar-close-glyphs)))
               'close-tab t
               'help-echo "Click to close tab"))
 
-(defun modern-tab-bar-format-new-button ()
-  "Return the tab bar button that runs `modern-tab-bar-new-command'.
+(defun modern-tabs-bar-format-new-button ()
+  "Return the tab bar button that runs `modern-tabs-bar-new-command'.
 A `tab-bar-format' can name this function."
-  `((add-tab menu-item ,(modern-tab-bar-new-button)
-             ,modern-tab-bar-new-command
+  `((add-tab menu-item ,(modern-tabs-bar-new-button)
+             ,modern-tabs-bar-new-command
              :help "New")))
 
-(defun modern-tab-bar--spacer (width)
+(defun modern-tabs-bar--spacer (width)
   "Return a space of WIDTH for the tab bar.
 WIDTH is a factor of the normal width of a space, as in the
 `space-width' display property.  A terminal draws no part of a cell,
@@ -180,15 +176,15 @@ A terminal gets no menu button either, which is what these spaces pad."
   (when (display-graphic-p)
     (propertize " " 'display `(space-width ,width))))
 
-(defun modern-tab-bar--thin-spacer ()
-  "Return a thin space for `modern-tab-bar-format'."
-  (modern-tab-bar--spacer 0.1))
+(defun modern-tabs-bar--thin-spacer ()
+  "Return a thin space for `modern-tabs-bar-format'."
+  (modern-tabs-bar--spacer 0.1))
 
-(defun modern-tab-bar--wide-spacer ()
-  "Return a wide space for `modern-tab-bar-format'."
-  (modern-tab-bar--spacer 0.75))
+(defun modern-tabs-bar--wide-spacer ()
+  "Return a wide space for `modern-tabs-bar-format'."
+  (modern-tabs-bar--spacer 0.75))
 
-(defun modern-tab-bar--menu-bar ()
+(defun modern-tabs-bar--menu-bar ()
   "Return the menu button of the tab bar, and nothing in a terminal.
 A terminal paints the row of the bar in the redisplay that turns the
 bar on.  With the menu button in the row, a tab that changes before
@@ -210,61 +206,61 @@ each of them."
     ;; the face of the row it sits in, which is what the new button
     ;; does.
     `((menu-bar menu-item
-                ,(modern-tab-icon-for
+                ,(modern-tabs-icon-for
                   'menu-button
-                  (lambda () (apply #'modern-tab-glyph
-                                    modern-tab-bar-menu-glyphs)))
+                  (lambda () (apply #'modern-tabs-glyph
+                                    modern-tabs-bar-menu-glyphs)))
                 tab-bar-menu-bar :help "Menu bar"))))
 
-(defun modern-tab-bar--group-icon (name)
+(defun modern-tabs-bar--group-icon (name)
   "Return the icon for the tab group NAME.
 The patterns are matched with the case rules of the reader who wrote
 them, not with those of whatever buffer redisplay happens to be in:
 `string-match-p' honours a buffer-local `case-fold-search', so \"HOME\"
 claimed \"[P] homelab\" in most buffers and not in others."
   (let ((name (or name "")))
-    (modern-tab-icon-for
+    (modern-tabs-icon-for
      ;; The key says which row asked: one table serves both, and a tab
      ;; group and a buffer can carry the same name.
      (cons 'group name)
      (or (cdr (seq-find (lambda (entry)
                           (let ((case-fold-search nil))
                             (string-match-p (car entry) name)))
-                        modern-tab-bar-icons))
-         modern-tab-bar-default-icon))))
+                        modern-tabs-bar-icons))
+         modern-tabs-bar-default-icon))))
 
-(defun modern-tab-bar-group-format (tab _index &optional selected)
+(defun modern-tabs-bar-group-format (tab _index &optional selected)
   "Return the tab bar entry for the group of TAB.
 SELECTED is non-nil for the group of the current tab.  This is what
 `tab-bar-tab-group-format-function' is set to."
   (let ((name (funcall tab-bar-tab-group-function tab))
         (face (if selected 'tab-bar-tab-group-current
                 'tab-bar-tab-group-inactive)))
-    (concat (modern-tab-indicator
-             modern-tab-bar-indicator-height
-             (if selected modern-tab-bar-active-indicator-width
-               modern-tab-bar-inactive-indicator-width)
-             (if selected modern-tab-bar-active-indicator-color
-               modern-tab-bar-inactive-indicator-color))
-            (propertize (concat " " (modern-tab-bar--group-icon name) " "
-                                (if (functionp modern-tab-bar-group-name-function)
-                                    (funcall modern-tab-bar-group-name-function
+    (concat (modern-tabs-indicator
+             modern-tabs-bar-indicator-height
+             (if selected modern-tabs-bar-active-indicator-width
+               modern-tabs-bar-inactive-indicator-width)
+             (if selected modern-tabs-bar-active-indicator-color
+               modern-tabs-bar-inactive-indicator-color))
+            (propertize (concat " " (modern-tabs-bar--group-icon name) " "
+                                (if (functionp modern-tabs-bar-group-name-function)
+                                    (funcall modern-tabs-bar-group-name-function
                                              name)
                                   name)
                                 " ")
                         'face face))))
 
-(defun modern-tab-bar-name-format (tab index)
+(defun modern-tabs-bar-name-format (tab index)
   "Return the tab bar entry for TAB, the one numbered INDEX.
 This is what `tab-bar-tab-name-format-function' is set to."
   (let ((selected (eq (car tab) 'current-tab)))
     (propertize
      (concat (if selected
-                 (modern-tab-icon-for
+                 (modern-tabs-icon-for
                   'current-glyph
                   (lambda ()
-                    (apply #'modern-tab-glyph
-                           modern-tab-bar-current-glyphs)))
+                    (apply #'modern-tabs-glyph
+                           modern-tabs-bar-current-glyphs)))
                " ")
              (if tab-bar-tab-hints (format "%d " index) "")
              (alist-get 'name tab)
@@ -273,7 +269,7 @@ This is what `tab-bar-tab-name-format-function' is set to."
              ;; for `non-selected', which is the other way round.
              (if (memq tab-bar-close-button-show
                        (if selected '(t selected) '(t non-selected)))
-                 (modern-tab-bar-close-button) " "))
+                 (modern-tabs-bar-close-button) " "))
      ;; The face the tab bar itself would use, which is where
      ;; `tab-bar-tab-inactive', `tab-bar-tab-ungrouped' and a reader's
      ;; own `tab-bar-tab-face-function' live.  Naming `tab-bar-tab'
@@ -284,35 +280,40 @@ This is what `tab-bar-tab-name-format-function' is set to."
 
 ;;;; The mode
 
-(defun modern-tab-bar--setup ()
+(defun modern-tabs-bar--setup ()
   "Give the tab bar the modern look."
   ;; The buttons and the menu entry are drawn per redisplay, by
-  ;; `modern-tab-bar-new-button', `modern-tab-bar-close-button' and
-  ;; `modern-tab-bar--menu-bar': settled here they would be settled for
+  ;; `modern-tabs-bar-new-button', `modern-tabs-bar-close-button' and
+  ;; `modern-tabs-bar--menu-bar': settled here they would be settled for
   ;; one display, and for the glyphs the options held at the enable.
-  (modern-tab-borrow 'modern-tab-bar-mode
+  (modern-tabs-borrow 'modern-tabs-bar-mode
                      'tab-bar-format 'tab-bar-separator
                      'tab-bar-auto-width
                      'tab-bar-tab-group-format-function
                      'tab-bar-tab-name-format-function)
-  (setq tab-bar-format modern-tab-bar-format
+  (setq tab-bar-format modern-tabs-bar-format
         tab-bar-separator ""
         tab-bar-auto-width nil
-        tab-bar-tab-group-format-function #'modern-tab-bar-group-format
-        tab-bar-tab-name-format-function #'modern-tab-bar-name-format))
+        tab-bar-tab-group-format-function #'modern-tabs-bar-group-format
+        tab-bar-tab-name-format-function #'modern-tabs-bar-name-format))
 
-(defun modern-tab-bar--teardown ()
+(defun modern-tabs-bar--teardown ()
   "Give the tab bar back what it had before the mode."
-  (modern-tab-give-back 'modern-tab-bar-mode))
+  (modern-tabs-give-back 'modern-tabs-bar-mode))
 
 ;;;###autoload
-(define-minor-mode modern-tab-bar-mode
-  "Give the tab bar a modern look, with an icon for each tab group."
+(define-minor-mode modern-tabs-bar-mode
+  "Give the tab bar a modern look, with an icon for each tab group.
+The bar itself is the reader's: turn it on with `tab-bar-mode', which
+this mode neither enables nor disables.  Turning this mode off puts
+every tab bar variable back as it was found, so the stock look returns
+on the next redisplay."
   :global t
-  :group 'modern-tab-bar
-  (if modern-tab-bar-mode
-      (modern-tab-bar--setup)
-    (modern-tab-bar--teardown)))
+  :group 'modern-tabs-bar
+  (if modern-tabs-bar-mode
+      (modern-tabs-bar--setup)
+    (modern-tabs-bar--teardown))
+  (modern-tabs-forget))
 
-(provide 'modern-tab-bar)
-;;; modern-tab-bar.el ends here
+(provide 'modern-tabs-bar)
+;;; modern-tabs-bar.el ends here

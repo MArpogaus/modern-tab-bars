@@ -1,9 +1,9 @@
-#+TITLE: How modern-tab-bars is built
+#+TITLE: How modern-tabs is built
 #+OPTIONS: toc:nil
 
-Three files.  =modern-tab.el= holds what both modes draw with,
-=modern-tab-bar.el= dresses the tab bar and =modern-tab-line.el=
-dresses the tab line.  The package prefix is =modern-tab-= for all
+Three files.  =modern-tabs.el= holds what both modes draw with,
+=modern-tabs-bar.el= dresses the tab bar and =modern-tabs-line.el=
+dresses the tab line.  The package prefix is =modern-tabs-= for all
 three: package-lint takes the prefix from the main file's name, and
 both mode names live under it.
 
@@ -26,27 +26,21 @@ other.
 
 * Icons, and what a frame can draw
 
-=modern-tab-glyph= takes candidates and answers with the first the
-frame can really draw, the last one being the answer where it can draw
-none.  On a graphic frame the question goes to =font-at=, of the string
-and the face it carries: a nerd-icons glyph names a font family of its
-own, and asking whether the buffer's default font has the character
-answers for a font that draws nothing here.  In a buffer where
-=mixed-pitch-mode= remaps the default face, that mistake reads every
-nerd glyph as missing.  A glyph =font-at= answers for with a font of
-another family is refused as well: that font is a fallback the fontset
-found, in another weight and another width than the row it sits in.
-
-Every character of a candidate is asked about, not the first one alone.
-The glyphs of the tab bar are padded with the spaces that hold them
-away from the text beside them, so a question about the first character
-was a question about a space, which every display draws.
+=modern-tabs-glyph= takes candidates, best first.  A graphic frame
+shows the first one as it is: which fonts draw a character — the face's
+own, or a fallback the fontset finds — is the frame's business, and a
+version that refused fallback fonts refused the reader's =✕= and every
+nerd glyph with it.  The candidate list exists for terminals.
 
 A terminal has no font to ask.  =char-displayable-p= answers for the
 coding system there, and a UTF-8 terminal says yes to every character
 it can encode, box or not.  So a character of a Unicode private use
-area is refused on a terminal: that is where a nerd font keeps its
-glyphs, and no terminal font can be assumed to carry them.
+area is refused on a terminal — that is where a nerd font keeps its
+glyphs, and no terminal font can be assumed to carry them — and the
+first candidate that passes whole wins, the last one being the answer
+where none does.  Every character is asked about, not the first one
+alone: the glyphs are padded with spaces, and a question about the
+first character was a question about a space.
 
 Finding a nerd icon walks the table of its style — 6880 entries for the
 material design one — so an answer is kept per key and per kind of
@@ -62,8 +56,8 @@ parameter of every window, which is where a row already drawn is kept.
 * What a mode gives back
 
 Both modes set variables that belong to Emacs, and both put back what
-they found.  =modern-tab-borrow= keeps the value of each variable under
-the name of the mode before the mode sets it, and =modern-tab-give-back=
+they found.  =modern-tabs-borrow= keeps the value of each variable under
+the name of the mode before the mode sets it, and =modern-tabs-give-back=
 writes those values back.  It keeps nothing for a mode that has
 borrowed already: =define-minor-mode= runs its body on every call, and a
 mode enabled twice would otherwise record the values it set itself.
