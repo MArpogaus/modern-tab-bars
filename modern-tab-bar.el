@@ -161,9 +161,12 @@ on.  See `modern-tab-bar-new-button' for why it is not settled once."
 
 (defun modern-tab-bar-format-new-button ()
   "Return the tab bar button that runs `modern-tab-bar-new-command'.
-A `tab-bar-format' can name this function."
-  `((add-tab menu-item ,(propertize (modern-tab-bar-new-button)
-                                    'face 'default)
+A `tab-bar-format' can name this function.  The button wears the face
+of the row it sits in, which is the look a bar of this package keeps:
+the menu button beside it carries `default' because a theme can leave
+the row's face without contrast, and an unreadable word is worse than
+a blended one."
+  `((add-tab menu-item ,(modern-tab-bar-new-button)
              ,modern-tab-bar-new-command
              :help "New")))
 
