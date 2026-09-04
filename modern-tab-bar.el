@@ -162,7 +162,8 @@ on.  See `modern-tab-bar-new-button' for why it is not settled once."
 (defun modern-tab-bar-format-new-button ()
   "Return the tab bar button that runs `modern-tab-bar-new-command'.
 A `tab-bar-format' can name this function."
-  `((add-tab menu-item ,(modern-tab-bar-new-button)
+  `((add-tab menu-item ,(propertize (modern-tab-bar-new-button)
+                                    'face 'default)
              ,modern-tab-bar-new-command
              :help "New")))
 
@@ -202,14 +203,20 @@ each of them."
     ;; `tab-bar-tab-inactive': a face meant for a tab, and in a bar
     ;; this package draws it is the colour of neither the bar nor a
     ;; tab — measured with doom-one, the word "Menu" could not be
-    ;; read at all.  No face of our own either: the string then wears
-    ;; the face of the row it sits in, which is what the new button
-    ;; does.
+    ;; read at all.  But no face at all will not do either: a string
+    ;; with none wears the face of the row it sits in, and a reader's
+    ;; theme can leave that face without any contrast of its own —
+    ;; measured with doom-one-light, the tab bar face was #f0f0f0 on
+    ;; #f0f0f0, and the row swallowed the button whole.  So both
+    ;; buttons of this bar wear `default', the one face every theme
+    ;; keeps readable.
     `((menu-bar menu-item
-                ,(modern-tab-icon-for
-                  'menu-button
-                  (lambda () (apply #'modern-tab-glyph
-                                    modern-tab-bar-menu-glyphs)))
+                ,(propertize
+                  (modern-tab-icon-for
+                   'menu-button
+                   (lambda () (apply #'modern-tab-glyph
+                                     modern-tab-bar-menu-glyphs)))
+                  'face 'default)
                 tab-bar-menu-bar :help "Menu bar"))))
 
 (defun modern-tab-bar--group-icon (name)
