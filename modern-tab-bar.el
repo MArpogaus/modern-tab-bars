@@ -274,9 +274,10 @@ This is what `tab-bar-tab-name-format-function' is set to."
      ;; `tab-bar-tab-inactive', `tab-bar-tab-ungrouped' and a reader's
      ;; own `tab-bar-tab-face-function' live.  Naming `tab-bar-tab'
      ;; here drew every tab in the selected tab's colours.
+     ;; No `mouse-face' here: `tab-bar-tab-highlight' painted a cyan
+     ;; block under the pointer that the modern look does not want.
      'face (list :inherit (funcall tab-bar-tab-face-function tab)
-                 :weight (if selected 'bold 'normal))
-     'mouse-face 'tab-bar-tab-highlight)))
+                 :weight (if selected 'bold 'normal)))))
 
 ;;;; The mode
 
