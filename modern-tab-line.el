@@ -270,12 +270,12 @@ and it is left alone."
   (add-hook 'window-configuration-change-hook #'modern-tab-line-update-frame)
   (add-hook 'kill-buffer-hook #'modern-tab-line--buffer-killed)
   (modern-tab-borrow 'modern-tab-line-mode
-                      'tab-line-tab-name-function
-                      'tab-line-tab-name-format-function
-                      'tab-line-close-tab-function
-                      'tab-line-separator
-                      'tab-line-new-button-show
-                      'tab-line-close-button-show)
+                     'tab-line-tab-name-function
+                     'tab-line-tab-name-format-function
+                     'tab-line-close-tab-function
+                     'tab-line-separator
+                     'tab-line-new-button-show
+                     'tab-line-close-button-show)
   (setq tab-line-tab-name-function #'modern-tab-line-tab-name
         tab-line-tab-name-format-function #'modern-tab-line-tab-format
         tab-line-close-tab-function #'modern-tab-line-close-tab

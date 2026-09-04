@@ -58,11 +58,13 @@ The package needs Emacs 29.1 or later and nothing else.  nerd-icons is
 optional: install it for the glyphs, or name plain strings in the icon
 options.
 
-The repository is called =modern-tabs=; the main file, and with it the
-prefix of every symbol, is =modern-tab=.  Both modes are autoloaded:
+The id the package is installed by is =modern-tabs=, the name of the
+repository; the prefix of every symbol is =modern-tab-=, after the
+main file that prefix comes from, =modern-tab.el=.  Both modes are
+autoloaded:
 
 #+begin_src emacs-lisp
-  (use-package modern-tab
+  (use-package modern-tabs
     :vc (:url "https://github.com/MArpogaus/modern-tabs" :rev :newest)
     :hook ((after-init . modern-tab-bar-mode)
            (after-init . modern-tab-line-mode)))

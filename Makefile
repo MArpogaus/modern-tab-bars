@@ -59,7 +59,7 @@ checkdoc:
 	@out=$$($(BATCH) --eval '$(checkdoc)' $(SRC) 2>&1); \
 	  if [ -n "$$out" ]; then printf '%s\n' "$$out"; exit 1; fi
 
-# One package, three files: package-lint reads the headers of the main
+# One package, four files: package-lint reads the headers of the main
 # file for all of them, as MELPA does.
 lint: $(STAMP)
 	@$(BATCH) --eval '(setq package-lint-main-file "modern-tab.el")' \

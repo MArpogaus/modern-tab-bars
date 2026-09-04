@@ -41,10 +41,15 @@
 ;;
 ;; This file is the common one: the indicator beside a tab, the glyph
 ;; fallback, the icon table and the way a mode gives Emacs its
-;; variables back.  It is also the package's main file, which is why it
-;; carries the name the whole package is prefixed with: package-lint
-;; takes that prefix from the main file, and `modern-tab-bar-mode' and
-;; `modern-tab-line-mode' both live under `modern-tab-'.
+;; variables back.  It is also the file package-lint reads as the
+;; package's main one, which is why it carries the name the whole
+;; package is prefixed with: package-lint takes that prefix from the
+;; main file's name, and `modern-tab-bar-mode' and
+;; `modern-tab-line-mode' both live under `modern-tab-'.  The package
+;; is entered by `modern-tabs.el', which carries the version as well:
+;; elpaca treats the file the id names as the package main, and reads
+;; the version from there, while package-lint reads this file, so both
+;; carry it and a release bumps both.
 ;;
 ;; Icons come from nerd-icons where it is installed.  A graphic frame
 ;; shows the first glyph of a candidate list as it is — which fonts

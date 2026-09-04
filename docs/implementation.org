@@ -1,11 +1,19 @@
 #+TITLE: How modern-tab is built
 #+OPTIONS: toc:nil
 
-Three files.  =modern-tab.el= holds what both modes draw with,
+Four files.  =modern-tab.el= holds what both modes draw with,
 =modern-tab-bar.el= dresses the tab bar and =modern-tab-line.el=
-dresses the tab line.  The package prefix is =modern-tab-= for all
-three: package-lint takes the prefix from the main file's name, and
-both mode names live under it.
+dresses the tab line; =modern-tabs.el= is the entry the package is
+installed by, and its body loads the two modes.
+
+The id and the prefix differ.  The package is installed as
+=modern-tabs=, the name of the repository, and elpaca treats the file
+the id names as the package main — which is why =modern-tabs.el=
+carries the version.  The symbols are prefixed =modern-tab-=, after
+=modern-tab.el=: package-lint takes the prefix from the main file it
+is pointed at, and both mode names live under it.  That file also
+keeps the version and the dependency line, because package-lint reads
+its headers only there, so a release bumps the version in both.
 
 * The indicator
 
