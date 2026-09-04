@@ -193,7 +193,9 @@ The indent, checkdoc and complexity checks are pre-commit hooks of
 [[https://github.com/MArpogaus/elisp-complexity][elisp-complexity]]: indent gives Lisp the indentation =indent-region=
 gives it, each file loaded first, checkdoc reads the documentation
 strings, and complexity stops a commit where a function costs a reader
-more than fifteen.  See
+more than fifteen.  Check-declare and melpazoid join them before a
+push, the first saying where a declare-function has gone stale, the
+second reading the package as a MELPA reviewer would.  See
 [[file:docs/implementation.org][docs/implementation.org]] for how the two modes are built.
 
 ** Contributions
