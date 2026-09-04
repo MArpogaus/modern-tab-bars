@@ -73,7 +73,7 @@ Nil shows no icon at all."
   :type '(choice (const :tag "None" nil) function)
   :set #'modern-tab-set-and-forget)
 
-(defcustom modern-tab-line-close-glyphs '("✕ " "× " "x ")
+(defcustom modern-tab-line-close-glyphs '(" " "✕ " "× " "x ")
   "Glyphs of the close button, best first.
 A graphic frame shows the first one; a terminal takes the first it can
 encode that is no private use glyph, so keep a plain character last."

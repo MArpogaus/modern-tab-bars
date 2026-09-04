@@ -102,21 +102,22 @@ encode that is no private use glyph, so keep a plain string last."
   :type '(repeat string)
   :set #'modern-tab-set-and-forget)
 
-(defcustom modern-tab-bar-close-glyphs '(" ✕ " " × " " x ")
+(defcustom modern-tab-bar-close-glyphs
+  '("  " " ✕ " " × " " x ")
   "Glyphs of the close button, best first.
 A graphic frame shows the first one; a terminal takes the first it can
 encode that is no private use glyph, so keep a plain character last."
   :type '(repeat string)
   :set #'modern-tab-set-and-forget)
 
-(defcustom modern-tab-bar-menu-glyphs '("󰍜 " "≡ " " Menu ")
+(defcustom modern-tab-bar-menu-glyphs '(" " "≡ " " Menu ")
   "Glyphs of the menu button, best first.
 A graphic frame shows the first one; a terminal takes the first it can
 encode that is no private use glyph, so keep a plain string last."
   :type '(repeat string)
   :set #'modern-tab-set-and-forget)
 
-(defcustom modern-tab-bar-current-glyphs '("󰅂 " "› " "  ")
+(defcustom modern-tab-bar-current-glyphs '(" " "› " "  ")
   "Glyphs that mark the selected tab, best first.
 A graphic frame shows the first one; a terminal takes the first it can
 encode that is no private use glyph.  The last resort here is two

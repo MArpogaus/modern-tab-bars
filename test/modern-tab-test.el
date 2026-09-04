@@ -103,6 +103,36 @@ candidate — a box there."
   ;; and the padding alone still passes
   (should (modern-tab--encodable-p "   ")))
 
+(defun modern-tab-test--glyph (glyphs)
+  "Return the character of the first of GLYPHS that is not a space.
+The candidates are padded, and it is the glyph itself that is asked
+about."
+  (seq-find (lambda (char) (> char ?\s)) (string-to-list (car glyphs))))
+
+(ert-deftest modern-tab-test-both-rows-lead-with-one-family ()
+  "The buttons of the two rows are drawn at one weight and one size.
+Every one of them leads with a codicon — the block from EA60 to EC84 —
+because a nerd glyph of another family is drawn at another weight: the
+material design chevron is bold beside the codicon plus, and the
+octicon cross is half its size.  The close button of the two rows is
+the same glyph, with the padding each row needs."
+  (dolist (glyphs (list modern-tab-bar-new-glyphs
+                        modern-tab-bar-close-glyphs
+                        modern-tab-bar-menu-glyphs
+                        modern-tab-bar-current-glyphs
+                        modern-tab-line-close-glyphs))
+    (should (<= #xEA60 (modern-tab-test--glyph glyphs) #xEC84)))
+  (should (= (modern-tab-test--glyph modern-tab-bar-close-glyphs)
+             (modern-tab-test--glyph modern-tab-line-close-glyphs)))
+  (should-not (= (modern-tab-test--glyph modern-tab-bar-close-glyphs)
+                 (modern-tab-test--glyph modern-tab-bar-new-glyphs)))
+  ;; A terminal takes the last candidate, and two different buttons
+  ;; must not come out as the same character there.
+  (should-not (equal (car (last modern-tab-bar-close-glyphs))
+                     (car (last modern-tab-bar-new-glyphs))))
+  (should-not (equal (car (last modern-tab-bar-menu-glyphs))
+                     (car (last modern-tab-bar-current-glyphs)))))
+
 (ert-deftest modern-tab-test-an-icon-spec-is-a-string-or-a-plist ()
   "A string stands for itself, nil is nothing, a plist names a nerd icon."
   (should (equal (modern-tab-icon "*") "*"))

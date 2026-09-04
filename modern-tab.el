@@ -58,6 +58,12 @@
 ;;     :hook ((after-init . modern-tab-bar-mode)
 ;;            (after-init . modern-tab-line-mode)))
 ;;
+;; The buttons of the two rows are one family: every glyph a button
+;; leads with is a codicon, so the plus of the tab bar, the close
+;; button of both rows, the menu button and the mark on the selected
+;; tab carry one weight and one visual size.  A filled shape among thin
+;; ones shouts, and so does a bold one.
+;;
 ;; Icons come from nerd-icons where it is installed.  A graphic frame
 ;; shows the first glyph of a candidate list as it is — which fonts
 ;; draw it is the frame's business, fallbacks included.  A terminal is
